@@ -19,5 +19,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        
+        // Initialize database if needed
+        using var dbContext = new ApplicationDbContext();
+        dbContext.Database.EnsureCreated();
     }
 }
