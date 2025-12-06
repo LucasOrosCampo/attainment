@@ -9,78 +9,169 @@
       Title="Subjects">
     
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <!-- Search Bar -->
-        <Grid Grid.Row="0" Margin="25,20,25,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Subjects List View -->
+        <Grid x:Name="SubjectsListView">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             
-            <Grid Grid.Column="0" Margin="0,0,10,0">
-                <TextBox x:Name="SearchBox" 
-                         Padding="10,8"
-                         FontSize="14"
-                         FontFamily="{StaticResource ModernFont}"
-                         VerticalContentAlignment="Center"
-                         TextChanged="SearchBox_TextChanged"/>
-                         
-                <TextBlock IsHitTestVisible="False" 
-                           Text="Search subjects..." 
-                           VerticalAlignment="Center"
-                           Margin="12,0,0,0"
-                           FontFamily="{StaticResource ModernFont}"
-                           Foreground="DarkGray">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+            <!-- Search Bar -->
+            <Grid Grid.Row="0" Margin="25,20,25,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <Grid Grid.Column="0" Margin="0,0,10,0">
+                    <TextBox x:Name="SearchBox" 
+                             Style="{StaticResource ModernTextBox}"
+                             TextChanged="SearchBox_TextChanged"/>
+                             
+                    <TextBlock IsHitTestVisible="False" 
+                               Text="Search subjects..." 
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0"
+                               FontFamily="{StaticResource ModernFont}"
+                               Foreground="DarkGray">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+                
+                <Button Grid.Column="1" 
+                        Content="Search"
+                        Style="{StaticResource GradientButton}"
+                        Click="SearchButton_Click"/>
             </Grid>
             
-            <Button Grid.Column="1" 
-                    Content="Search"
-                    Style="{StaticResource GradientButton}"
-                    Click="SearchButton_Click"/>
+            <ScrollViewer Grid.Row="1" 
+                          Margin="25,5,25,5"
+                          Style="{StaticResource ModernScrollViewer}"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          PanningMode="VerticalOnly">
+                <ItemsControl x:Name="SubjectsItemsControl">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Margin" Value="0,0,15,15"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:SubjectCard 
+                                Subject="{Binding}"
+                                Width="300"
+                                Height="180"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            
+            <!-- Add New Subject Button -->
+            <Button Grid.Row="2"
+                    Content="Add New Subject"
+                    HorizontalAlignment="Right"
+                    Margin="0,15,25,25"
+                    Style="{StaticResource PrimaryActionButton}"
+                    Click="AddSubjectButton_Click"/>
         </Grid>
         
-        <!-- Scrollable Subjects Area -->
-        <ScrollViewer Grid.Row="1" Margin="25,5,25,5" Style="{StaticResource ModernScrollViewer}">
-            <ItemsControl x:Name="SubjectsItemsControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <controls:SubjectCard 
-                            Subject="{Binding}"
-                            Margin="0,0,15,15"
-                            Width="200"
-                            Height="120"/>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-        
-        <!-- Add New Subject Button -->
-        <Button Grid.Row="2"
-                Content="Add New Subject"
-                HorizontalAlignment="Right"
-                Margin="0,15,25,25"
-                Style="{StaticResource PrimaryActionButton}"
-                Click="AddSubjectButton_Click"/>
+        <!-- Create Subject View -->
+        <Grid x:Name="CreateSubjectView" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                      Text="Create New Subject" 
+                      FontFamily="{StaticResource ModernFont}"
+                      FontSize="24"
+                      FontWeight="SemiBold"
+                      Foreground="#525f7f"
+                      Margin="25,30,25,20"/>
+            
+            <!-- Form Fields -->
+            <StackPanel Grid.Row="1" Margin="25,10,25,10">
+                <!-- Subject Name Field -->
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Subject Name" 
+                              FontFamily="{StaticResource ModernFont}"
+                              FontSize="16"
+                              FontWeight="SemiBold"
+                              Foreground="#525f7f"
+                              Margin="0,0,0,10"/>
+                    <TextBox x:Name="SubjectNameTextBox"
+                            Style="{StaticResource ModernTextBox}"
+                            MaxLength="50"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Description Field -->
+                                    <StackPanel>
+                    <TextBlock Text="Description" 
+                              FontFamily="{StaticResource ModernFont}"
+                              FontSize="16"
+                              FontWeight="SemiBold"
+                              Foreground="#525f7f"
+                              Margin="0,0,0,10"/>
+                    <TextBox x:Name="DescriptionTextBox"
+                            Style="{StaticResource ModernTextBox}"
+                            TextWrapping="Wrap"
+                            AcceptsReturn="True"
+                            MinHeight="100"
+                            MaxLength="255"
+                            VerticalScrollBarVisibility="Auto"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Favorite Checkbox -->
+                                    <CheckBox x:Name="IsFavoriteCheckBox" 
+                         Content="Mark as Favorite" 
+                         Style="{StaticResource ModernCheckBox}"
+                                         Margin="0,20,0,0"
+                                         FontWeight="Medium"
+                                         Padding="5,2,0,2"/>
+            </StackPanel>
+            
+            <!-- Action Buttons -->
+            <Grid Grid.Row="2" Margin="25,15,25,25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Cancel Button -->
+                <Button Grid.Column="1" 
+                       Content="Cancel"
+                       Margin="0,0,15,0"
+                       Padding="30,10"
+                       Style="{StaticResource GradientButton}"
+                       Click="CancelButton_Click"/>
+                
+                <!-- Save Button -->
+                <Button Grid.Column="2" 
+                       Content="Save"
+                       Padding="30,10"
+                       Style="{StaticResource PrimaryActionButton}"
+                       Click="SaveButton_Click"/>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

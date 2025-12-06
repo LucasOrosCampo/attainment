@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:models="clr-namespace:attainment.Models"
              mc:Ignorable="d"
-             d:DesignHeight="120" d:DesignWidth="200">
+             d:DesignHeight="120" d:DesignWidth="200"
+             x:Name="root">
     
     <UserControl.Resources>
         <Style x:Key="CardStyle" TargetType="Border">
@@ -21,7 +22,7 @@
         </Style>
     </UserControl.Resources>
     
-    <Border Style="{StaticResource CardStyle}" Padding="12">
+    <Border DataContext="{Binding Subject, ElementName=root}" Style="{StaticResource CardStyle}" Padding="12">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -29,7 +30,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
-            <Grid Grid.Row="0">
+            <Grid  Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>

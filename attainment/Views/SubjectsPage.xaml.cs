@@ -13,8 +13,15 @@ namespace attainment.Views
     /// </summary>
     public partial class SubjectsPage : Page
     {
+        private enum ViewMode
+        {
+            List,
+            Create
+        }
+        
         private ApplicationDbContext _dbContext;
-        private List<Subject> _allSubjects = new List<Subject>();
+        private List<Subject> _allSubjects = [];
+        private ViewMode _currentMode = ViewMode.List;
         
         public SubjectsPage()
         {
@@ -68,10 +75,79 @@ namespace attainment.Views
 
         private void AddSubjectButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement adding new subject functionality
-            // This would typically open a dialog or navigate to a new page
-            MessageBox.Show("Add Subject functionality will be implemented soon.", 
-                "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Switch to creation mode
+            SwitchMode(ViewMode.Create);
+        }
+        
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Switch back to list mode without saving
+            SwitchMode(ViewMode.List);
+        }
+        
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(SubjectNameTextBox.Text))
+            {
+                MessageBox.Show("Subject name is required.", "Validation Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            
+            try
+            {
+                // Create new subject from form data
+                var newSubject = new Subject
+                {
+                    Name = SubjectNameTextBox.Text.Trim(),
+                    Description = DescriptionTextBox.Text.Trim(),
+                    IsFavorite = IsFavoriteCheckBox.IsChecked ?? false
+                };
+                
+                // Add to database and save changes
+                _dbContext.Subjects.Add(newSubject);
+                await _dbContext.SaveChangesAsync();
+                
+                // Reload subjects to show the new one
+                LoadSubjects();
+                
+                // Switch back to list mode
+                SwitchMode(ViewMode.List);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving subject: {ex.Message}", "Database Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void SwitchMode(ViewMode mode)
+        {
+            _currentMode = mode;
+            
+            switch (mode)
+            {
+                case ViewMode.List:
+                    // Show list view, hide creation view
+                    SubjectsListView.Visibility = Visibility.Visible;
+                    CreateSubjectView.Visibility = Visibility.Collapsed;
+                    break;
+                    
+                case ViewMode.Create:
+                    // Reset form fields
+                    SubjectNameTextBox.Text = string.Empty;
+                    DescriptionTextBox.Text = string.Empty;
+                    IsFavoriteCheckBox.IsChecked = false;
+                    
+                    // Show creation view, hide list view
+                    SubjectsListView.Visibility = Visibility.Collapsed;
+                    CreateSubjectView.Visibility = Visibility.Visible;
+                    
+                    // Set focus to the name field
+                    SubjectNameTextBox.Focus();
+                    break;
+            }
         }
     }
 }

@@ -27,7 +27,6 @@ namespace attainment.Controls
         public SubjectCard()
         {
             InitializeComponent();
-            DataContext = Subject;
         }
     }
 
