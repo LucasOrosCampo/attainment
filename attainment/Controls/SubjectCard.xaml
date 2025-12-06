@@ -23,6 +23,11 @@
     </UserControl.Resources>
     
     <Border DataContext="{Binding Subject, ElementName=root}" Style="{StaticResource CardStyle}" Padding="12">
+        <Border.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="Delete" Foreground="Red" Click="DeleteMenuItem_Click"/>
+            </ContextMenu>
+        </Border.ContextMenu>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

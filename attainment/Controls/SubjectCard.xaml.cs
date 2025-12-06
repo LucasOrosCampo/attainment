@@ -10,6 +10,19 @@ namespace attainment.Controls
     /// </summary>
     public partial class SubjectCard : UserControl
     {
+        // Routed event to notify parent controls that a delete was requested via context menu
+        public static readonly RoutedEvent DeleteRequestedEvent = EventManager.RegisterRoutedEvent(
+            name: nameof(DeleteRequested),
+            routingStrategy: RoutingStrategy.Bubble,
+            handlerType: typeof(RoutedEventHandler),
+            ownerType: typeof(SubjectCard));
+
+        public event RoutedEventHandler DeleteRequested
+        {
+            add => AddHandler(DeleteRequestedEvent, value);
+            remove => RemoveHandler(DeleteRequestedEvent, value);
+        }
+
         public static readonly DependencyProperty SubjectProperty = 
             DependencyProperty.Register(
                 nameof(Subject), 
@@ -27,6 +40,12 @@ namespace attainment.Controls
         public SubjectCard()
         {
             InitializeComponent();
+        }
+
+        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Raise a bubbling event so the page hosting the card can handle deletion
+            RaiseEvent(new RoutedEventArgs(DeleteRequestedEvent, this));
         }
     }
 

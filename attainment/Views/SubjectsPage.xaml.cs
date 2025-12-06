@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
 using attainment.Models;
+using attainment.Controls;
 
 namespace attainment.Views
 {
@@ -28,6 +29,9 @@ namespace attainment.Views
             InitializeComponent();
             _dbContext = new ApplicationDbContext();
             LoadSubjects();
+
+            // Listen for delete requests bubbling up from SubjectCard context menus
+            SubjectsItemsControl.AddHandler(SubjectCard.DeleteRequestedEvent, new RoutedEventHandler(SubjectCard_DeleteRequested));
         }
 
         private async void LoadSubjects()
@@ -121,7 +125,28 @@ namespace attainment.Views
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+    
+        private async void SubjectCard_DeleteRequested(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is SubjectCard card && card.Subject is Subject subject)
+                {
+                    // Remove the subject from the database
+                    _dbContext.Subjects.Remove(subject);
+                    await _dbContext.SaveChangesAsync();
+
+                    // Reload subjects from the database to refresh the view
+                    LoadSubjects();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting subject: {ex.Message}", "Database Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void SwitchMode(ViewMode mode)
         {
             _currentMode = mode;
