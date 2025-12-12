@@ -27,19 +27,18 @@
         </DrawingImage>
     </Window.Icon>
     <Grid Margin="15">
-        <TabControl Style="{StaticResource ModernTabControl}">
+        <TabControl x:Name="MainTabControl" Style="{StaticResource ModernTabControl}">
             <TabItem Header="Subjects" IsSelected="True" Style="{StaticResource ModernTabItem}">
                 <Frame x:Name="SubjectsFrame" NavigationUIVisibility="Hidden" Source="/Views/SubjectsPage.xaml"/>
             </TabItem>
             <TabItem Header="Resources" Style="{StaticResource ModernTabItem}">
-                <TextBlock Text="Resources page will be implemented soon" 
-                           VerticalAlignment="Center" 
-                           HorizontalAlignment="Center"/>
+                <Frame x:Name="ResourcesFrame" NavigationUIVisibility="Hidden" Source="/Views/ResourcePage.xaml"/>
+            </TabItem>
+            <TabItem Header="Products" Style="{StaticResource ModernTabItem}">
+                <Frame x:Name="ProductsFrame" NavigationUIVisibility="Hidden" Source="/Views/ProductPage.xaml"/>
             </TabItem>
             <TabItem Header="Settings" Style="{StaticResource ModernTabItem}">
-                <TextBlock Text="Settings page will be implemented soon" 
-                           VerticalAlignment="Center" 
-                           HorizontalAlignment="Center"/>
+                <Frame x:Name="SettingsFrame" NavigationUIVisibility="Hidden" Source="/Views/SettingsPage.xaml"/>
             </TabItem>
         </TabControl>
     </Grid>

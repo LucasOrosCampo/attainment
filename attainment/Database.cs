@@ -14,6 +14,8 @@ public class ApplicationDbContext : DbContext
     // DbSets for each entity in the database
     public DbSet<Subject> Subjects { get; set; } = null!;
     public DbSet<Resource> Resources { get; set; } = null!;
+    public DbSet<Setting> Settings { get; set; } = null!;
+    public DbSet<Product> Products { get; set; } = null!;
 
     /// <summary>
     /// Default constructor needed for migrations
@@ -69,12 +71,10 @@ public class ApplicationDbContext : DbContext
             .WithMany(s => s.Resources)
             .HasForeignKey(r => r.SubjectId);
 
-        // Seed initial subjects
-        modelBuilder.Entity<Subject>().HasData(
-            new Subject { Id = 1, Name = "Mathematics", Description = "Math courses and materials", IsFavorite = false },
-            new Subject { Id = 2, Name = "Computer Science", Description = "Programming and computer theory", IsFavorite = true },
-            new Subject { Id = 3, Name = "Physics", Description = "Physical sciences and mechanics", IsFavorite = false },
-            new Subject { Id = 4, Name = "Languages", Description = "Foreign language studies", IsFavorite = false }
-        );
+        // Configure Setting key
+        modelBuilder.Entity<Setting>()
+            .HasKey(s => s.Key);
+        
+        modelBuilder.Entity<Product>().Property(x => x.Type).HasConversion<string>();
     }
 }

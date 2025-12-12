@@ -36,6 +36,19 @@ namespace attainment.Controls
             get => (Subject)GetValue(SubjectProperty);
             set => SetValue(SubjectProperty, value);
         }
+
+        // Routed event to notify parent controls that an open (navigate) was requested via left click
+        public static readonly RoutedEvent OpenRequestedEvent = EventManager.RegisterRoutedEvent(
+            name: nameof(OpenRequested),
+            routingStrategy: RoutingStrategy.Bubble,
+            handlerType: typeof(RoutedEventHandler),
+            ownerType: typeof(SubjectCard));
+
+        public event RoutedEventHandler OpenRequested
+        {
+            add => AddHandler(OpenRequestedEvent, value);
+            remove => RemoveHandler(OpenRequestedEvent, value);
+        }
         
         public SubjectCard()
         {
@@ -46,6 +59,13 @@ namespace attainment.Controls
         {
             // Raise a bubbling event so the page hosting the card can handle deletion
             RaiseEvent(new RoutedEventArgs(DeleteRequestedEvent, this));
+        }
+
+        protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
+            // Raise a bubbling event to signal navigation/open request
+            RaiseEvent(new RoutedEventArgs(OpenRequestedEvent, this));
         }
     }
 

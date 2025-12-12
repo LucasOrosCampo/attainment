@@ -32,6 +32,9 @@ namespace attainment.Views
 
             // Listen for delete requests bubbling up from SubjectCard context menus
             SubjectsItemsControl.AddHandler(SubjectCard.DeleteRequestedEvent, new RoutedEventHandler(SubjectCard_DeleteRequested));
+
+            // Listen for open requests (left click) to navigate to ResourcePage
+            SubjectsItemsControl.AddHandler(SubjectCard.OpenRequestedEvent, new RoutedEventHandler(SubjectCard_OpenRequested));
         }
 
         private async void LoadSubjects()
@@ -49,19 +52,19 @@ namespace attainment.Views
             }
         }
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void SubjectSearchBar_SearchTextChanged(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
         }
 
-        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        private void SubjectSearchBar_SearchSubmitted(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
         }
 
         private void ApplyFilter()
         {
-            string searchTerm = SearchBox.Text.Trim().ToLower();
+            string searchTerm = (SubjectSearchBar?.Text ?? string.Empty).Trim().ToLower();
             
             if (string.IsNullOrEmpty(searchTerm))
             {
@@ -144,6 +147,35 @@ namespace attainment.Views
             {
                 MessageBox.Show($"Error deleting subject: {ex.Message}", "Database Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SubjectCard_OpenRequested(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is SubjectCard card && card.Subject is Subject subject)
+            {
+                // When a subject card is clicked, switch to the Resources tab and navigate there
+                var mainWindow = Application.Current?.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // Find controls by name to avoid relying on field access modifiers
+                    var tabControl = mainWindow.FindName("MainTabControl") as TabControl;
+                    var resourcesFrame = mainWindow.FindName("ResourcesFrame") as Frame;
+
+                    // Select the Resources tab (index 1)
+                    if (tabControl != null)
+                    {
+                        tabControl.SelectedIndex = 1;
+                    }
+
+                    // Navigate the Resources frame to the ResourcePage for this subject
+                    resourcesFrame?.Navigate(new ResourcePage(subject));
+                }
+                else
+                {
+                    // Fallback: try page-local navigation if for some reason main window is unavailable
+                    this.NavigationService?.Navigate(new ResourcePage(subject));
+                }
             }
         }
 

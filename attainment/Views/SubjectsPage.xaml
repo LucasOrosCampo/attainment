@@ -17,42 +17,12 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
-            <!-- Search Bar -->
-            <Grid Grid.Row="0" Margin="25,20,25,20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <Grid Grid.Column="0" Margin="0,0,10,0">
-                    <TextBox x:Name="SearchBox" 
-                             Style="{StaticResource ModernTextBox}"
-                             TextChanged="SearchBox_TextChanged"/>
-                             
-                    <TextBlock IsHitTestVisible="False" 
-                               Text="Search subjects..." 
-                               VerticalAlignment="Center"
-                               Margin="12,0,0,0"
-                               FontFamily="{StaticResource ModernFont}"
-                               Foreground="DarkGray">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
-                
-                <Button Grid.Column="1" 
-                        Content="Search"
-                        Style="{StaticResource GradientButton}"
-                        Click="SearchButton_Click"/>
-            </Grid>
+            <!-- Search Bar (reusable control) -->
+            <controls:SearchBar Grid.Row="0"
+                                x:Name="SubjectSearchBar"
+                                Margin="25,20,25,20"
+                                SearchTextChanged="SubjectSearchBar_SearchTextChanged"
+                                SearchSubmitted="SubjectSearchBar_SearchSubmitted"/>
             
             <ScrollViewer Grid.Row="1" 
                           Margin="25,5,25,5"
