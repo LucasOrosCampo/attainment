@@ -25,6 +25,7 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
         <PackageReference Include="PdfPig" Version="0.1.13-alpha-20251207-ee0cb" />
+        <PackageReference Include="QuestPDF" Version="2025.2.1" />
     </ItemGroup>
 
     <ItemGroup>

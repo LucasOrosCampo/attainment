@@ -6,6 +6,7 @@ using attainment.Infrastructure;
 using attainment.Models;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace attainment.ViewModels;
@@ -82,6 +83,7 @@ public class ExamCreationViewModel: INotifyPropertyChanged
         Pdf = pdf;
         PropertyChanged += OnResourcePropertyChanged;
         ToggleCorrectionCommand = new RelayCommand(_ => ToggleCorrection());
+        ExportExamCommand = new RelayCommand(async _ => await ExportExamAsync(), _ => ParsedExam != null && !IsLoading);
     }
 
     private void OnResourcePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -215,11 +217,29 @@ public class ExamCreationViewModel: INotifyPropertyChanged
     public string CorrectionButtonLabel => IsCorrectionMode ? "Reset" : "Correction";
 
     public ICommand ToggleCorrectionCommand { get; }
+    public ICommand ExportExamCommand { get; }
 
     private void ToggleCorrection()
     {
         // Toggle mode; when leaving correction mode, hide explanations/colors (no need to change selections)
         IsCorrectionMode = !IsCorrectionMode;
+    }
+
+    private async Task ExportExamAsync()
+    {
+        if (ParsedExam == null) return;
+        try
+        {
+            IsLoading = true;
+            await Task.Run(() =>
+            {
+                Pdf.ExportExam(ParsedExam);
+            });
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private void BuildPreviewQuestions()
