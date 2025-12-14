@@ -96,6 +96,12 @@
                                     <Border Background="#f0f4ff" CornerRadius="3" Padding="6,2" Margin="0,8,0,0">
                                         <TextBlock Text="{Binding Subject.Name}" Foreground="#5e72e4" FontSize="12"/>
                                     </Border>
+                                    <!-- Create Exam Button -->
+                                    <Button Content="Create Exam"
+                                            Margin="0,10,0,0"
+                                            Style="{StaticResource PrimaryActionButton}"
+                                            Tag="{Binding}"
+                                            Click="CreateExamButton_Click"/>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

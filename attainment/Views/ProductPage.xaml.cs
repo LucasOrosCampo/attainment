@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
 using attainment.Models;
+using attainment.ViewModels;
 
 namespace attainment.Views
 {
@@ -26,10 +27,13 @@ namespace attainment.Views
 
         private List<Resource> _allResources = [];
         private List<Product> _allProducts = [];
+        private readonly ProductPageViewModel _viewModel;
 
-        public ProductPage()
+        public ProductPage(ProductPageViewModel vm)
         {
             InitializeComponent();
+            _viewModel = vm;
+            DataContext = vm; 
             Loaded += ProductPage_Loaded;
         }
 

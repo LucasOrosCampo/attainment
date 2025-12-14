@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using attainment.Models;
 using Microsoft.Win32;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace attainment.Views
 {
@@ -58,6 +59,34 @@ namespace attainment.Views
 
             // Apply initial filter based on selected subject and search text
             ApplyFilter();
+        }
+
+        private void CreateExamButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is Button btn && btn.Tag is Resource resource)
+                {
+                    var page = App.Services.GetRequiredService<ExamCreationPage>();
+                    page.ViewModel.Resource = resource;
+                    
+                    // Navigate
+                    if (NavigationService != null)
+                    {
+                        NavigationService.Navigate(page);
+                    }
+                    else
+                    {
+                        // Fallback: try to find parent frame
+                        var window = Application.Current.MainWindow as MainWindow;
+                        window?.ResourcesFrame?.Navigate(page);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task LoadSubjectsAsync()

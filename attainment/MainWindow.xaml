@@ -35,7 +35,7 @@
                 <Frame x:Name="ResourcesFrame" NavigationUIVisibility="Hidden" Source="/Views/ResourcePage.xaml"/>
             </TabItem>
             <TabItem Header="Products" Style="{StaticResource ModernTabItem}">
-                <Frame x:Name="ProductsFrame" NavigationUIVisibility="Hidden" Source="/Views/ProductPage.xaml"/>
+                <Frame x:Name="ProductsFrame" NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Header="Settings" Style="{StaticResource ModernTabItem}">
                 <Frame x:Name="SettingsFrame" NavigationUIVisibility="Hidden" Source="/Views/SettingsPage.xaml"/>
