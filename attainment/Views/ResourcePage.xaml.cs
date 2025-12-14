@@ -67,6 +67,16 @@ namespace attainment.Views
             {
                 if (sender is Button btn && btn.Tag is Resource resource)
                 {
+                    // Validate file exists and is a PDF before proceeding
+                    var path = resource.FilePath;
+                    if (string.IsNullOrWhiteSpace(path) || !File.Exists(path) ||
+                        !string.Equals(System.IO.Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show("Create Exam is available only for existing PDF files linked to the resource.",
+                            "Unsupported File", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
                     var page = App.Services.GetRequiredService<ExamCreationPage>();
                     page.ViewModel.Resource = resource;
                     

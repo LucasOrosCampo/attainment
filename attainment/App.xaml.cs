@@ -30,6 +30,7 @@ public partial class App : Application
                 // Infrastructure services
                 services.AddTransient<Infrastructure.ExamRepository>();
                 services.AddSingleton<Infrastructure.IAi, Infrastructure.OpenAi>();
+                services.AddSingleton<Infrastructure.IPdf, Infrastructure.Pdf>();
 
                 // ViewModels
                 services.AddTransient<ViewModels.MainWindowViewModel>();

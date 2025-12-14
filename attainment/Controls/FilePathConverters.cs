@@ -76,4 +76,30 @@ namespace attainment.Controls
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotSupportedException();
     }
+
+    /// <summary>
+    /// Returns true only if the bound string is a path to an existing file with .pdf extension.
+    /// Use to enable/disable actions that require an actual PDF file.
+    /// </summary>
+    public class FilePathToExistingPdfConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var path = value as string;
+            if (string.IsNullOrWhiteSpace(path)) return false;
+            try
+            {
+                if (!File.Exists(path)) return false;
+                var ext = Path.GetExtension(path);
+                return string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
 }

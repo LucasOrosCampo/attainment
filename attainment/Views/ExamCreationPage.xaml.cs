@@ -23,6 +23,7 @@ namespace attainment.Views
             try
             {
                 _vm.IsLoading = true;
+                
                 var prompt = _vm.PromptText ?? string.Empty;
                 var result = await Task.Run(() => _vm.Ai.Prompt(prompt));
                 _vm.ResultText = result ?? string.Empty;

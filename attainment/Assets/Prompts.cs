@@ -2,8 +2,9 @@ namespace attainment.Models;
 
 static class Prompts
 {
-    private const string Prompt =
-        """
+    public static string Prompt(int numberOfQuestions = 5)
+    {
+        const string template = """
         You are a JSON generator. You must output ONLY a single valid JSON object and nothing else.
 
         ABSOLUTE OUTPUT RULES:
@@ -11,6 +12,7 @@ static class Prompts
         - No explanations, no comments, no extra text before or after the JSON.
         - Do not add any keys other than those defined below.
         - Ensure the output is strictly parseable JSON (double quotes, no trailing commas).
+        - The language used must be spanish
 
         TARGET SHAPE (must match exactly):
 
@@ -34,7 +36,7 @@ static class Prompts
         }
 
         CONSTRAINTS:
-        - "Questions" must be a non-empty array.
+        - "Questions" must be a non-empty array with exactly {numberOfQuestions} questions.
         - Each Question must have 3 to 6 options.
         - Option.Number must start at 1 and increment by 1 within each question (1..N).
         - CorrectOption must be one of the Option.Number values for that question.
@@ -48,5 +50,10 @@ static class Prompts
 
         If you cannot comply with all rules, output exactly:
         {"Questions":[]}
+        
+        The following is the text that should be used to generate the questions from : 
         """;
+
+        return template.Replace("{numberOfQuestions}", numberOfQuestions.ToString());
+    }
 }

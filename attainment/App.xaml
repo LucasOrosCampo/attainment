@@ -9,6 +9,7 @@
             <controls:FilePathToVisibilityConverter x:Key="FilePathToVisibilityConverter"/>
             <controls:FilePathToExtensionLabelConverter x:Key="FilePathToExtensionLabelConverter"/>
             <controls:FilePathToBrushConverter x:Key="FilePathToBrushConverter"/>
+            <controls:FilePathToExistingPdfConverter x:Key="FilePathToExistingPdfConverter"/>
         
             <!-- Font Family Declaration -->
             <FontFamily x:Key="ModernFont">Segoe UI</FontFamily>

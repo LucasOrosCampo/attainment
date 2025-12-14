@@ -4,10 +4,20 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
-      Title="Exam Creation">
+      Title="Exam Creation"
+      x:Name="PageRoot">
 
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="B2V"/>
+        <!-- Gradient brushes for correction visuals -->
+        <LinearGradientBrush x:Key="CorrectGradientBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#C6F6D5" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="IncorrectGradientBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#FED7D7" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
+        </LinearGradientBrush>
     </Page.Resources>
 
     <Grid Margin="20">
@@ -30,9 +40,16 @@
             </TextBlock.Text>
         </TextBlock>
 
-        <!-- Actions Row: Trigger + Loading -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,12">
+        <!-- Actions Row: Question count + Trigger + Loading -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,12" VerticalAlignment="Center">
+            <TextBlock Text="Questions:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Width="60"
+                     HorizontalContentAlignment="Center"
+                     Style="{StaticResource ModernTextBox}"
+                     Text="{Binding NumberOfQuestions, UpdateSourceTrigger=PropertyChanged}"/>
+
             <Button Content="Ask AI"
+                    Margin="12,0,0,0"
                     Style="{StaticResource PrimaryActionButton}"
                     Click="AskAiButton_Click"/>
             <ProgressBar Width="160" Height="12" Margin="12,0,0,0"
@@ -49,6 +66,8 @@
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -73,6 +92,93 @@
                          Style="{StaticResource ModernTextBox}"
                          IsReadOnly="True"
                          Text="{Binding ResultText}"/>
+
+                <!-- Exam Preview Area (hidden until there is a result) -->
+                <StackPanel Grid.Row="4" Grid.RowSpan="2" Visibility="{Binding HasResultText, Converter={StaticResource B2V}}">
+                    <TextBlock Text="Preview" FontWeight="SemiBold" Margin="0,16,0,6"/>
+                    <Border Padding="12" CornerRadius="6" Background="#f7fafc" BorderBrush="#e2e8f0" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Error message -->
+                            <TextBlock Grid.Row="0"
+                                       Foreground="#e53e3e"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasParseError, Converter={StaticResource B2V}}"
+                                       Text="{Binding ParseError}"/>
+
+                            <!-- Questions list -->
+                            <ItemsControl Grid.Row="1"
+                                          Margin="0,4,0,0"
+                                          Visibility="{Binding HasParsedExam, Converter={StaticResource B2V}}"
+                                          ItemsSource="{Binding PreviewQuestions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10" Margin="0,8,0,0" BorderBrush="#e2e8f0" BorderThickness="1" CornerRadius="6">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="White"/>
+                                                    <Style.Triggers>
+                                                        <!-- Green when in correction mode and correct answer selected -->
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding DataContext.IsCorrectionMode, ElementName=PageRoot}" Value="True"/>
+                                                                <Condition Binding="{Binding IsCorrect}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Background" Value="{StaticResource CorrectGradientBrush}"/>
+                                                        </MultiDataTrigger>
+                                                        <!-- Red when in correction mode, answered, but incorrect -->
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding DataContext.IsCorrectionMode, ElementName=PageRoot}" Value="True"/>
+                                                                <Condition Binding="{Binding IsAnswered}" Value="True"/>
+                                                                <Condition Binding="{Binding IsCorrect}" Value="False"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Background" Value="{StaticResource IncorrectGradientBrush}"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel>
+                                                <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="{Binding Content}"/>
+                                                <ItemsControl ItemsSource="{Binding Options}" Margin="0,8,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <ToggleButton Content="{Binding Content}"
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Margin="0,4,0,0"
+                                                                          Padding="6,4"
+                                                                          HorizontalAlignment="Left"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Margin="0,8,0,0"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="#2d3748"
+                                                           Visibility="{Binding DataContext.IsCorrectionMode, ElementName=PageRoot, Converter={StaticResource B2V}}"
+                                                           Text="{Binding Explanation}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Correction/Reset button -->
+                            <Button Grid.Row="2"
+                                    Content="{Binding CorrectionButtonLabel}"
+                                    Command="{Binding ToggleCorrectionCommand}"
+                                    Margin="0,12,0,0"
+                                    HorizontalAlignment="Left"
+                                    Padding="10,6"
+                                    Style="{StaticResource PrimaryActionButton}"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
     </Grid>
