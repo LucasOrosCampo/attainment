@@ -27,26 +27,43 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Selected Resource Path/Info -->
-        <TextBlock Grid.Row="0"
-                   FontSize="16"
-                   FontWeight="SemiBold"
-                   Foreground="#525f7f"
-                   TextWrapping="Wrap">
-            <TextBlock.Text>
-                <MultiBinding StringFormat="Resource: {0}">
-                    <Binding Path="Resource.FilePath"/>
-                </MultiBinding>
-            </TextBlock.Text>
-        </TextBlock>
+        <!-- Header Row: Back + Resource Path/Info -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0"
+                    Content="Back"
+                    Padding="10,6"
+                    Margin="0,0,12,0"
+                    Click="BackButton_Click"
+                    Style="{StaticResource PrimaryActionButton}"/>
+            <TextBlock Grid.Column="1"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="#525f7f"
+                       TextWrapping="Wrap">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="Resource: {0}">
+                        <Binding Path="Resource.FilePath"/>
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </Grid>
 
-        <!-- Actions Row: Question count + Trigger + Loading -->
+        <!-- Actions Row: Question count + Use Base64 + Trigger + Loading -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,12" VerticalAlignment="Center">
             <TextBlock Text="Questions:" VerticalAlignment="Center" Margin="0,0,8,0"/>
             <TextBox Width="60"
                      HorizontalContentAlignment="Center"
                      Style="{StaticResource ModernTextBox}"
                      Text="{Binding NumberOfQuestions, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <CheckBox Content="Use Base 64"
+                      Margin="12,0,0,0"
+                      VerticalAlignment="Center"
+                      IsChecked="{Binding UseBase64, Mode=TwoWay}"/>
 
             <Button Content="Ask AI"
                     Margin="12,0,0,0"

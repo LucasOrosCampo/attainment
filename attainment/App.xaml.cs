@@ -54,7 +54,11 @@ public partial class App : Application
             dbContext.Database.EnsureCreated();
             dbContext.Database.Migrate();
             EnsureSettingsExistAndCleanUp(dbContext);
-            Seed(dbContext);
+
+#if DEBUG
+                Seed(dbContext);
+#endif
+
             dbContext.SaveChanges();
         }
 

@@ -25,8 +25,21 @@ namespace attainment.Views
                 _vm.IsLoading = true;
                 
                 var prompt = _vm.PromptText ?? string.Empty;
-                var result = await Task.Run(() => _vm.Ai.Prompt(prompt));
-                _vm.ResultText = result ?? string.Empty;
+
+                // If UseBase64 is enabled and we have a selected resource, pass the file via IAi
+                if (_vm.UseBase64 && _vm.Resource?.FilePath is string filePath && System.IO.File.Exists(filePath))
+                {
+                    var fileName = System.IO.Path.GetFileName(filePath);
+                    var bytes = await Task.Run(() => System.IO.File.ReadAllBytes(filePath));
+                    var b64 = Convert.ToBase64String(bytes);
+                    var resultWithFile = await Task.Run(() => _vm.Ai.Prompt(prompt, b64, fileName));
+                    _vm.ResultText = resultWithFile ?? string.Empty;
+                }
+                else
+                {
+                    var resultNoFile = await Task.Run(() => _vm.Ai.Prompt(prompt));
+                    _vm.ResultText = resultNoFile ?? string.Empty;
+                }
             }
             catch (Exception ex)
             {
@@ -35,6 +48,14 @@ namespace attainment.Views
             finally
             {
                 _vm.IsLoading = false;
+            }
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (NavigationService?.CanGoBack == true)
+            {
+                NavigationService.GoBack();
             }
         }
     }

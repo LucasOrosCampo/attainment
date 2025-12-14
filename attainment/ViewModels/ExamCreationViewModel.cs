@@ -132,6 +132,22 @@ public class ExamCreationViewModel: INotifyPropertyChanged
         }
     }
 
+    private bool _useBase64;
+    public bool UseBase64
+    {
+        get => _useBase64;
+        set
+        {
+            if (_useBase64 != value)
+            {
+                _useBase64 = value;
+                OnPropertyChanged();
+                // When toggled, rebuild prompt to include/exclude raw file text
+                RebuildPromptText();
+            }
+        }
+    }
+
     private int _numberOfQuestions = 5;
     public int NumberOfQuestions
     {
@@ -260,7 +276,8 @@ public class ExamCreationViewModel: INotifyPropertyChanged
     private void RebuildPromptText()
     {
         var header = Prompts.Prompt(NumberOfQuestions);
-        if (!string.IsNullOrEmpty(_resourceText))
+        // If UseBase64 is ON, do not append the resource text to the prompt.
+        if (!UseBase64 && !string.IsNullOrEmpty(_resourceText))
         {
             PromptText = header + "\n" + _resourceText;
         }
