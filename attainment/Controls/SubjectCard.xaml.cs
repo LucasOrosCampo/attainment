@@ -1,85 +1,97 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using attainment.Models;
 
-namespace attainment.Controls
+namespace attainment.Controls;
+
+public partial class SubjectCard : UserControl
 {
-    /// <summary>
-    /// Interaction logic for SubjectCard.xaml
-    /// </summary>
-    public partial class SubjectCard : UserControl
+    public static readonly RoutedEvent DeleteRequestedEvent = EventManager.RegisterRoutedEvent(
+        nameof(DeleteRequested),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SubjectCard));
+
+    public static readonly RoutedEvent OpenRequestedEvent = EventManager.RegisterRoutedEvent(
+        nameof(OpenRequested),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SubjectCard));
+
+    public static readonly RoutedEvent FavoriteChangedEvent = EventManager.RegisterRoutedEvent(
+        nameof(FavoriteChanged),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SubjectCard));
+
+    public static readonly DependencyProperty SubjectProperty = DependencyProperty.Register(
+        nameof(Subject),
+        typeof(Subject),
+        typeof(SubjectCard),
+        new PropertyMetadata(null));
+
+    public Subject Subject
     {
-        // Routed event to notify parent controls that a delete was requested via context menu
-        public static readonly RoutedEvent DeleteRequestedEvent = EventManager.RegisterRoutedEvent(
-            name: nameof(DeleteRequested),
-            routingStrategy: RoutingStrategy.Bubble,
-            handlerType: typeof(RoutedEventHandler),
-            ownerType: typeof(SubjectCard));
+        get => (Subject)GetValue(SubjectProperty);
+        set => SetValue(SubjectProperty, value);
+    }
 
-        public event RoutedEventHandler DeleteRequested
-        {
-            add => AddHandler(DeleteRequestedEvent, value);
-            remove => RemoveHandler(DeleteRequestedEvent, value);
-        }
+    public event RoutedEventHandler DeleteRequested
+    {
+        add => AddHandler(DeleteRequestedEvent, value);
+        remove => RemoveHandler(DeleteRequestedEvent, value);
+    }
 
-        public static readonly DependencyProperty SubjectProperty = 
-            DependencyProperty.Register(
-                nameof(Subject), 
-                typeof(Subject), 
-                typeof(SubjectCard), 
-                new PropertyMetadata(null)
-            );
-        
-        public Subject Subject
-        {
-            get => (Subject)GetValue(SubjectProperty);
-            set => SetValue(SubjectProperty, value);
-        }
+    public event RoutedEventHandler OpenRequested
+    {
+        add => AddHandler(OpenRequestedEvent, value);
+        remove => RemoveHandler(OpenRequestedEvent, value);
+    }
 
-        // Routed event to notify parent controls that an open (navigate) was requested via left click
-        public static readonly RoutedEvent OpenRequestedEvent = EventManager.RegisterRoutedEvent(
-            name: nameof(OpenRequested),
-            routingStrategy: RoutingStrategy.Bubble,
-            handlerType: typeof(RoutedEventHandler),
-            ownerType: typeof(SubjectCard));
+    public event RoutedEventHandler FavoriteChanged
+    {
+        add => AddHandler(FavoriteChangedEvent, value);
+        remove => RemoveHandler(FavoriteChangedEvent, value);
+    }
 
-        public event RoutedEventHandler OpenRequested
-        {
-            add => AddHandler(OpenRequestedEvent, value);
-            remove => RemoveHandler(OpenRequestedEvent, value);
-        }
-        
-        public SubjectCard()
-        {
-            InitializeComponent();
-        }
+    public SubjectCard()
+    {
+        InitializeComponent();
+    }
 
-        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            // Raise a bubbling event so the page hosting the card can handle deletion
-            RaiseEvent(new RoutedEventArgs(DeleteRequestedEvent, this));
-        }
+    private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        RaiseEvent(new RoutedEventArgs(DeleteRequestedEvent, this));
+    }
 
-        protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+    private void FavoriteButton_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        RaiseEvent(new RoutedEventArgs(FavoriteChangedEvent, this));
+    }
+
+    protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonUp(e);
+        if (!e.Handled)
         {
-            base.OnMouseLeftButtonUp(e);
-            // Raise a bubbling event to signal navigation/open request
             RaiseEvent(new RoutedEventArgs(OpenRequestedEvent, this));
         }
     }
+}
 
-    public class FavoriteColorConverter : System.Windows.Data.IValueConverter
+public sealed class FavoriteColorConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            bool isFavorite = (bool)value;
-            return isFavorite ? Brushes.Gold : Brushes.Gray;
-        }
+        return value is true ? Brushes.Gold : Brushes.Gray;
+    }
 
-        public object ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new System.NotImplementedException();
-        }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
     }
 }

@@ -11,15 +11,11 @@ namespace attainment;
 /// </summary>
 public class ApplicationDbContext : DbContext
 {
-    // DbSets for each entity in the database
     public DbSet<Subject> Subjects { get; set; } = null!;
     public DbSet<Resource> Resources { get; set; } = null!;
     public DbSet<Setting> Settings { get; set; } = null!;
     public DbSet<Product> Products { get; set; } = null!;
 
-    /// <summary>
-    /// Default constructor needed for migrations
-    /// </summary>
     public ApplicationDbContext() { } 
     
     /// <summary>
@@ -65,16 +61,48 @@ public class ApplicationDbContext : DbContext
     /// <param name="modelBuilder">The builder being used to construct the model for this context</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Configure relationships
+        modelBuilder.Entity<Subject>()
+            .Property(subject => subject.Name)
+            .UseCollation("NOCASE");
+
+        modelBuilder.Entity<Subject>()
+            .HasIndex(subject => subject.Name)
+            .IsUnique();
+
         modelBuilder.Entity<Resource>()
             .HasOne(r => r.Subject)
             .WithMany(s => s.Resources)
-            .HasForeignKey(r => r.SubjectId);
+            .HasForeignKey(r => r.SubjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Resource>()
+            .Property(resource => resource.Title)
+            .UseCollation("NOCASE");
+
+        modelBuilder.Entity<Resource>()
+            .HasIndex(resource => resource.Title)
+            .IsUnique();
 
         // Configure Setting key
         modelBuilder.Entity<Setting>()
             .HasKey(s => s.Key);
         
-        modelBuilder.Entity<Product>().Property(x => x.Type).HasConversion<string>();
+        modelBuilder.Entity<Product>()
+            .HasOne(product => product.Resource)
+            .WithMany(resource => resource.Products)
+            .HasForeignKey(product => product.ResourceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Product>()
+            .Property(product => product.Name)
+            .UseCollation("NOCASE");
+
+        modelBuilder.Entity<Product>()
+            .HasIndex(product => product.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<Product>()
+            .Property(product => product.Type)
+            .HasConversion<string>();
     }
 }

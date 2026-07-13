@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.EntityFrameworkCore;
 using attainment.Models;
 using attainment.ViewModels;
+using attainment.Application;
 
 namespace attainment.Views
 {
@@ -21,7 +21,7 @@ namespace attainment.Views
             Create
         }
 
-        private readonly ApplicationDbContext _dbContext = new ApplicationDbContext();
+        private readonly IProductService _productService;
         private bool _resourcesLoaded = false;
         private ViewMode _currentMode = ViewMode.List;
 
@@ -29,10 +29,11 @@ namespace attainment.Views
         private List<Product> _allProducts = [];
         private readonly ProductPageViewModel _viewModel;
 
-        public ProductPage(ProductPageViewModel vm)
+        public ProductPage(ProductPageViewModel vm, IProductService productService)
         {
             InitializeComponent();
             _viewModel = vm;
+            _productService = productService;
             DataContext = vm; 
             Loaded += ProductPage_Loaded;
         }
@@ -53,9 +54,7 @@ namespace attainment.Views
         {
             try
             {
-                _allResources = await _dbContext.Resources
-                    .OrderBy(r => r.Title)
-                    .ToListAsync();
+                _allResources = [.. await _productService.GetResourcesAsync()];
 
                 // Insert an "All resources" pseudo item
                 var allItem = new Resource { Id = 0, Title = "All resources" };
@@ -76,10 +75,7 @@ namespace attainment.Views
         {
             try
             {
-                _allProducts = await _dbContext.Products
-                    .Include(p => p.Resource)
-                    .OrderByDescending(p => p.Id)
-                    .ToListAsync();
+                _allProducts = [.. await _productService.GetAllAsync()];
             }
             catch (Exception ex)
             {
@@ -200,30 +196,17 @@ namespace attainment.Views
 
             string content = (CreateContentTextBox.Text ?? string.Empty).Trim();
 
-            // Optional uniqueness check by name
-            bool exists = await _dbContext.Products.AnyAsync(p => p.Name.ToLower() == name.ToLower());
-            if (exists)
-            {
-                MessageBox.Show("A product with the same name already exists.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             try
             {
-                var product = new Product
-                {
-                    Name = name,
-                    Content = content,
-                    ResourceId = resourceId,
-                    Type = type
-                };
-
-                _dbContext.Products.Add(product);
-                await _dbContext.SaveChangesAsync();
+                await _productService.CreateAsync(name, content, resourceId, type);
 
                 await LoadProductsAsync();
                 ApplyFilter();
                 SwitchMode(ViewMode.List);
+            }
+            catch (DuplicateNameException ex)
+            {
+                MessageBox.Show(ex.Message, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             catch (Exception ex)
             {

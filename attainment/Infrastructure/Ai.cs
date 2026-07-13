@@ -1,10 +1,10 @@
 using System.IO;
 using attainment.Models;
-using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using attainment.Application;
 
 namespace attainment.Infrastructure;
 
@@ -15,14 +15,14 @@ public interface IAi
     string Prompt(string message, string? base64file = null, string? filename = null);
 }
 
-public class OpenAi(IDbContextFactory<ApplicationDbContext> dbFactory) : IAi
+public class OpenAi(ISettingsService settingsService) : IAi
 {
     private static readonly HttpClient _httpClient = new();
     private string? _apiKey;
 
     public string Prompt(string message, string? base64file = null, string? filename = null)
     {
-        _apiKey ??= dbFactory.CreateDbContext().Settings.FirstOrDefault(s => s.Key == KEYS.OpenAIKey)?.Value;
+        _apiKey ??= settingsService.GetValueAsync(SettingKeys.OpenAIKey).GetAwaiter().GetResult();
 
         if (string.IsNullOrEmpty(_apiKey))
             throw new InvalidOperationException(

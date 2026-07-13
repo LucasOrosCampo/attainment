@@ -61,10 +61,10 @@ Do not commit API keys or include them in logs, screenshots, issues or test fixt
 
 ## Database Migrations
 
-Install the EF Core tool if it is not already available:
+Restore the repository-local EF Core tool:
 
 ```powershell
-dotnet tool install --global dotnet-ef
+dotnet tool restore
 ```
 
 Create and apply migrations from the repository root:

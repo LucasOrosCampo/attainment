@@ -34,4 +34,6 @@ public class Resource
     
     // Navigation property
     public virtual Subject Subject { get; set; } = null!;
+
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

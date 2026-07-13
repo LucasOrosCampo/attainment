@@ -27,9 +27,8 @@ public class Setting
 /// <summary>
 /// Static container for all supported setting keys.
 /// </summary>
-public static class KEYS
+public static class SettingKeys
 {
-    // Only keep the OpenAI key setting as required
     public const string OpenAIKey = "openai.key";
 
     /// <summary>
@@ -37,7 +36,7 @@ public static class KEYS
     /// </summary>
     public static IEnumerable<string> All()
     {
-        return typeof(KEYS)
+        return typeof(SettingKeys)
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
             .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
             .Select(f => (string)f.GetRawConstantValue()!)
