@@ -15,7 +15,6 @@ namespace attainment;
 public partial class App : System.Windows.Application
 {
     private IHost _host = null!;
-    public static IServiceProvider Services { get; private set; } = null!;
     
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -36,6 +35,8 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IProductService, ProductService>();
                 services.AddSingleton<ISettingsService, SettingsService>();
                 services.AddSingleton<ISecretProtector, DpapiSecretProtector>();
+                services.AddSingleton<IAppNavigationService, Infrastructure.WpfAppNavigationService>();
+                services.AddSingleton<IUserNotificationService, Infrastructure.WpfUserNotificationService>();
 
                 services.AddSingleton<Infrastructure.ExamRepository>();
                 services.AddHttpClient<Infrastructure.IAi, Infrastructure.OpenAi>(client =>
@@ -46,8 +47,6 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<Infrastructure.IPdf, Infrastructure.Pdf>();
 
                 // ViewModels
-                services.AddTransient<ViewModels.MainWindowViewModel>();
-                services.AddTransient<ViewModels.ProductPageViewModel>();
                 services.AddTransient<ViewModels.ExamCreationViewModel>();
 
                 // Views
@@ -61,7 +60,6 @@ public partial class App : System.Windows.Application
             .Build();
 
         _host.Start();
-        Services = _host.Services;
 
         // Apply migrations and seed data
         using (var scope = _host.Services.CreateScope())

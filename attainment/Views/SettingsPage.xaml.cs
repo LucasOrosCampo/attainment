@@ -8,12 +8,14 @@ namespace attainment.Views;
 public partial class SettingsPage : Page
 {
     private readonly ISettingsService _settingsService;
+    private readonly IUserNotificationService _notifications;
     private List<Setting> _settings = [];
 
-    public SettingsPage(ISettingsService settingsService)
+    public SettingsPage(ISettingsService settingsService, IUserNotificationService notifications)
     {
         InitializeComponent();
         _settingsService = settingsService;
+        _notifications = notifications;
         Loaded += SettingsPage_Loaded;
     }
 
@@ -36,8 +38,7 @@ public partial class SettingsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error reloading settings: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Settings Error", "Settings could not be loaded. Try again.", ex);
         }
     }
 
@@ -52,8 +53,7 @@ public partial class SettingsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error saving settings: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Settings Error", "Settings could not be saved. Try again.", ex);
         }
     }
 }

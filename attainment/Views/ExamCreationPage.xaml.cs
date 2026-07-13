@@ -1,15 +1,19 @@
 using System.Windows;
 using System.Windows.Controls;
 using attainment.ViewModels;
+using attainment.Application;
 
 namespace attainment.Views;
 
 public partial class ExamCreationPage : Page
 {
-    public ExamCreationPage(ExamCreationViewModel viewModel)
+    private readonly IAppNavigationService _navigationService;
+
+    public ExamCreationPage(ExamCreationViewModel viewModel, IAppNavigationService navigationService)
     {
         InitializeComponent();
         ViewModel = viewModel;
+        _navigationService = navigationService;
         DataContext = viewModel;
     }
 
@@ -17,9 +21,6 @@ public partial class ExamCreationPage : Page
 
     private void BackButton_Click(object sender, RoutedEventArgs e)
     {
-        if (NavigationService?.CanGoBack == true)
-        {
-            NavigationService.GoBack();
-        }
+        _navigationService.GoBack();
     }
 }

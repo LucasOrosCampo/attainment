@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using attainment.Infrastructure;
 using attainment.Models;
+using Microsoft.Extensions.Logging;
 
 namespace attainment.ViewModels;
 
@@ -13,6 +14,7 @@ public sealed class ExamCreationViewModel : INotifyPropertyChanged
     private readonly IAi _ai;
     private readonly IPdf _pdf;
     private readonly ExamRepository _examRepository;
+    private readonly ILogger<ExamCreationViewModel> _logger;
     private CancellationTokenSource? _generationCancellation;
 
     private Resource? _resource;
@@ -30,11 +32,16 @@ public sealed class ExamCreationViewModel : INotifyPropertyChanged
     private ObservableCollection<QuestionVM> _previewQuestions = [];
     private bool _isCorrectionMode;
 
-    public ExamCreationViewModel(IAi ai, IPdf pdf, ExamRepository examRepository)
+    public ExamCreationViewModel(
+        IAi ai,
+        IPdf pdf,
+        ExamRepository examRepository,
+        ILogger<ExamCreationViewModel> logger)
     {
         _ai = ai;
         _pdf = pdf;
         _examRepository = examRepository;
+        _logger = logger;
         ToggleCorrectionCommand = new RelayCommand(_ => ToggleCorrection(), _ => ParsedExam is not null && !IsLoading);
         GenerateExamCommand = new AsyncRelayCommand(GenerateExamAsync, CanGenerateExam);
         CancelGenerationCommand = new RelayCommand(_ => _generationCancellation?.Cancel(), _ => IsLoading);
@@ -263,7 +270,8 @@ public sealed class ExamCreationViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            OperationError = ex.Message;
+            _logger.LogError(ex, "Exam generation failed for resource {ResourceId}", Resource?.Id);
+            OperationError = "The exam could not be generated. Check the file and OpenAI settings, then try again.";
             StatusMessage = "Generation failed.";
         }
         finally
@@ -286,7 +294,8 @@ public sealed class ExamCreationViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            OperationError = ex.Message;
+            _logger.LogError(ex, "Exam export failed for resource {ResourceId}", Resource?.Id);
+            OperationError = "The exam could not be exported. Check the destination and try again.";
             StatusMessage = "Export failed.";
         }
         finally

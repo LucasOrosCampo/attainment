@@ -15,12 +15,19 @@ public partial class SubjectsPage : Page
     }
 
     private readonly ISubjectService _subjectService;
+    private readonly IAppNavigationService _navigationService;
+    private readonly IUserNotificationService _notifications;
     private List<Subject> _allSubjects = [];
 
-    public SubjectsPage(ISubjectService subjectService)
+    public SubjectsPage(
+        ISubjectService subjectService,
+        IAppNavigationService navigationService,
+        IUserNotificationService notifications)
     {
         InitializeComponent();
         _subjectService = subjectService;
+        _navigationService = navigationService;
+        _notifications = notifications;
         Loaded += SubjectsPage_Loaded;
 
         SubjectsItemsControl.AddHandler(
@@ -48,8 +55,7 @@ public partial class SubjectsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error loading subjects: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Data Error", "Subjects could not be loaded. Try again.", ex);
         }
     }
 
@@ -96,8 +102,7 @@ public partial class SubjectsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error saving subject: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Data Error", "The subject could not be saved. Try again.", ex);
         }
     }
 
@@ -126,17 +131,15 @@ public partial class SubjectsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error deleting subject: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Data Error", "The subject could not be deleted. Try again.", ex);
         }
     }
 
     private void SubjectCard_OpenRequested(object sender, RoutedEventArgs e)
     {
-        if (e.OriginalSource is SubjectCard { Subject: Subject subject } &&
-            System.Windows.Application.Current?.MainWindow is MainWindow mainWindow)
+        if (e.OriginalSource is SubjectCard { Subject: Subject subject })
         {
-            mainWindow.OpenResourcesForSubject(subject.Id);
+            _navigationService.OpenResources(subject.Id);
         }
     }
 
@@ -153,8 +156,7 @@ public partial class SubjectsPage : Page
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error saving favorite: {ex.Message}", "Database Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError("Data Error", "The favorite could not be saved. The list will be reloaded.", ex);
             await LoadSubjectsAsync();
         }
     }

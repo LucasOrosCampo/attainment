@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore attainment.sln
+
+      - name: Audit dependencies
+        run: dotnet list attainment.sln package --vulnerable --include-transitive --no-restore
+
+      - name: Build
+        run: dotnet build attainment.sln --configuration Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test attainment.sln --configuration Release --no-build --no-restore --collect "XPlat Code Coverage"

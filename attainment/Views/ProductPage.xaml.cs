@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using attainment.Models;
-using attainment.ViewModels;
 using attainment.Application;
 
 namespace attainment.Views
@@ -22,19 +21,17 @@ namespace attainment.Views
         }
 
         private readonly IProductService _productService;
+        private readonly IUserNotificationService _notifications;
         private bool _resourcesLoaded = false;
         private ViewMode _currentMode = ViewMode.List;
 
         private List<Resource> _allResources = [];
         private List<Product> _allProducts = [];
-        private readonly ProductPageViewModel _viewModel;
-
-        public ProductPage(ProductPageViewModel vm, IProductService productService)
+        public ProductPage(IProductService productService, IUserNotificationService notifications)
         {
             InitializeComponent();
-            _viewModel = vm;
             _productService = productService;
-            DataContext = vm; 
+            _notifications = notifications;
             Loaded += ProductPage_Loaded;
         }
 
@@ -66,8 +63,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading resources: {ex.Message}", "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "Resources could not be loaded. Try again.", ex);
             }
         }
 
@@ -79,8 +75,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading products: {ex.Message}", "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "Products could not be loaded. Try again.", ex);
             }
         }
 
@@ -101,7 +96,7 @@ namespace attainment.Views
 
         private void ApplyFilter()
         {
-            string search = (ProductSearchBar?.Text ?? string.Empty).Trim().ToLowerInvariant();
+            string search = (ProductSearchBar?.Text ?? string.Empty).Trim();
             int selectedResourceId = 0;
             if (ResourcesComboBox?.SelectedValue is int id)
                 selectedResourceId = id;
@@ -116,10 +111,10 @@ namespace attainment.Views
             if (!string.IsNullOrEmpty(search))
             {
                 q = q.Where(p =>
-                    (p.Name?.ToLower().Contains(search) ?? false) ||
-                    (p.Content?.ToLower().Contains(search) ?? false) ||
-                    p.Type.ToString().ToLower().Contains(search) ||
-                    (p.Resource?.Title?.ToLower().Contains(search) ?? false)
+                    (p.Name?.Contains(search, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                    (p.Content?.Contains(search, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                    p.Type.ToString().Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
+                    (p.Resource?.Title?.Contains(search, StringComparison.CurrentCultureIgnoreCase) ?? false)
                 );
             }
 
@@ -210,7 +205,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving product: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "The product could not be saved. Try again.", ex);
             }
         }
     }

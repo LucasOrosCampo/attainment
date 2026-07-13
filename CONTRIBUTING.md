@@ -13,10 +13,13 @@
 
 ```powershell
 dotnet restore attainment.sln
-dotnet build attainment.sln --configuration Release
-dotnet test attainment.sln --configuration Release --no-build
+dotnet list attainment.sln package --vulnerable --include-transitive --no-restore
+dotnet build attainment.sln --configuration Release --no-restore -warnaserror
+dotnet test attainment.sln --configuration Release --no-build --no-restore
 git diff --check
 ```
+
+See [Testing and Continuous Integration](docs/testing.md) for test boundaries and migration validation.
 
 When a change affects migrations, also start the app against a new database and update an existing development database.
 

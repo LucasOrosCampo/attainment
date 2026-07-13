@@ -95,6 +95,7 @@ docs/                    Architecture and developer guides
 
 - [Architecture](docs/architecture.md)
 - [OpenAI integration](docs/openai-integration.md)
+- [Testing and continuous integration](docs/testing.md)
 - [Architecture review and WPF guide](docs/attainment-architecture-and-wpf-guide.html)
 - [Contributing](CONTRIBUTING.md)
 

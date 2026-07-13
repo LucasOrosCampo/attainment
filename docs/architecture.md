@@ -30,13 +30,15 @@ The target architecture keeps framework-specific concerns at the edges:
 
 ## Composition Root
 
-`App.xaml.cs` is the only composition root. It creates the Generic Host and registers services, ViewModels and Views. Application code should receive dependencies through constructors instead of reading `App.Services`.
+`App.xaml.cs` is the only composition root. It creates the Generic Host and registers services, ViewModels and Views. Application code receives dependencies through constructors; only `WpfAppNavigationService` resolves transient destination pages from the container.
 
 Recommended lifetimes:
 
 - Singleton: stateless, thread-safe clients and navigation/configuration services.
 - Transient: Pages and ViewModels created for a navigation operation.
 - Factory-created: `ApplicationDbContext`, with one short-lived context per operation.
+
+Navigation is exposed to pages through `IAppNavigationService`. This keeps frame selection and page resolution out of code-behind while preserving WPF's native `Frame` navigation.
 
 ## Persistence
 
@@ -77,7 +79,7 @@ Secrets should use a Windows-protected secret store rather than plain SQLite val
 
 ## Error Handling
 
-Infrastructure exceptions should not be displayed directly. Services log technical details through `ILogger`; ViewModels expose stable, actionable messages suitable for users.
+Infrastructure exceptions are not displayed directly. `WpfUserNotificationService` logs technical details through `ILogger` and presents stable, actionable messages suitable for users.
 
 Long-running operations use a state model such as `Idle`, `Loading`, `Success`, `Empty` and `Error`, and offer cancellation where it adds value.
 
