@@ -30,6 +30,13 @@ public class Setting
 public static class SettingKeys
 {
     public const string OpenAIKey = "openai.key";
+    public const string OpenAIModel = "openai.model";
+
+    public static string? DefaultValue(string key) => key switch
+    {
+        OpenAIModel => "gpt-4o-mini",
+        _ => null
+    };
 
     /// <summary>
     /// Returns all keys defined as public const string on this class.

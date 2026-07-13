@@ -55,9 +55,10 @@ The SQLite database is created under `%USERPROFILE%\.attainment\attainment.db`. 
 1. Start the application.
 2. Open the **Settings** tab.
 3. Set `openai.key` to a valid API key.
-4. Save the settings.
+4. Optionally change `openai.model`; the default is `gpt-4o-mini`.
+5. Save the settings.
 
-Do not commit API keys or include them in logs, screenshots, issues or test fixtures. The application should be treated as a local single-user tool; review the security notes in [the architecture documentation](docs/architecture.md) before distributing it.
+The API key is protected for the current Windows user with DPAPI before it is stored in SQLite. Do not commit API keys or include them in logs, screenshots, issues or test fixtures. The application should be treated as a local single-user tool; review the [OpenAI integration guide](docs/openai-integration.md) and the security notes in [the architecture documentation](docs/architecture.md) before distributing it.
 
 ## Database Migrations
 
@@ -93,6 +94,7 @@ docs/                    Architecture and developer guides
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [OpenAI integration](docs/openai-integration.md)
 - [Architecture review and WPF guide](docs/attainment-architecture-and-wpf-guide.html)
 - [Contributing](CONTRIBUTING.md)
 

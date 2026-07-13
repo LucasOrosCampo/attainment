@@ -60,23 +60,28 @@
                      Style="{StaticResource ModernTextBox}"
                      Text="{Binding NumberOfQuestions, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <CheckBox Content="Use Base 64"
+            <CheckBox Content="Send PDF directly"
                       Margin="12,0,0,0"
                       VerticalAlignment="Center"
+                      ToolTip="Preserves page images and layout; file size is limited to 50 MB."
                       IsChecked="{Binding UseBase64, Mode=TwoWay}"/>
 
             <Button Content="Ask AI"
                     Margin="12,0,0,0"
                     Style="{StaticResource PrimaryActionButton}"
-                    Click="AskAiButton_Click"/>
+                    Command="{Binding GenerateExamCommand}"/>
+            <Button Content="Cancel"
+                    Margin="8,0,0,0"
+                    Style="{StaticResource GradientButton}"
+                    Command="{Binding CancelGenerationCommand}"
+                    Visibility="{Binding IsLoading, Converter={StaticResource B2V}}"/>
             <ProgressBar Width="160" Height="12" Margin="12,0,0,0"
                          IsIndeterminate="True"
                          Visibility="{Binding IsLoading, Converter={StaticResource B2V}}"/>
             <TextBlock Margin="8,0,0,0"
                        VerticalAlignment="Center"
                        Foreground="#666"
-                       Text="Loading..."
-                       Visibility="{Binding IsLoading, Converter={StaticResource B2V}}"/>
+                       Text="{Binding StatusMessage}"/>
         </StackPanel>
 
         <!-- Prompt and Result -->
@@ -92,6 +97,11 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Prompt" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Grid.Row="0"
+                           HorizontalAlignment="Right"
+                           Foreground="#e53e3e"
+                           Text="{Binding OperationError}"
+                           Visibility="{Binding HasOperationError, Converter={StaticResource B2V}}"/>
                 <TextBox Grid.Row="1"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"
