@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
+using attainment.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +12,7 @@ namespace attainment;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private IHost _host = null!;
     public static IServiceProvider Services { get; private set; } = null!;
@@ -18,7 +20,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        
+
+        Directory.CreateDirectory(ApplicationDbContext.DatabaseDirectory);
+
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((ctx, services) =>
             {
@@ -27,7 +31,11 @@ public partial class App : Application
                     options.UseSqlite($"Data Source={ApplicationDbContext.DatabasePath}");
                 });
 
-                // Infrastructure services
+                services.AddSingleton<ISubjectService, SubjectService>();
+                services.AddSingleton<IResourceService, ResourceService>();
+                services.AddSingleton<IProductService, ProductService>();
+                services.AddSingleton<ISettingsService, SettingsService>();
+
                 services.AddTransient<Infrastructure.ExamRepository>();
                 services.AddSingleton<Infrastructure.IAi, Infrastructure.OpenAi>();
                 services.AddSingleton<Infrastructure.IPdf, Infrastructure.Pdf>();
@@ -39,11 +47,15 @@ public partial class App : Application
 
                 // Views
                 services.AddTransient<MainWindow>();
+                services.AddTransient<Views.SubjectsPage>();
+                services.AddTransient<Views.ResourcePage>();
                 services.AddTransient<Views.ProductPage>();
+                services.AddTransient<Views.SettingsPage>();
                 services.AddTransient<Views.ExamCreationPage>();
             })
             .Build();
 
+        _host.Start();
         Services = _host.Services;
 
         // Apply migrations and seed data
@@ -51,7 +63,6 @@ public partial class App : Application
         {
             var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
             using var dbContext = factory.CreateDbContext();
-            dbContext.Database.EnsureCreated();
             dbContext.Database.Migrate();
             EnsureSettingsExistAndCleanUp(dbContext);
 
@@ -69,6 +80,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _host?.StopAsync().GetAwaiter().GetResult();
         _host?.Dispose();
         base.OnExit(e);
     }
@@ -76,7 +88,7 @@ public partial class App : Application
     internal static void EnsureSettingsExistAndCleanUp(ApplicationDbContext dbContext)
     {
         // Ensure settings keys exist in database
-        foreach (var key in Models.KEYS.All())
+        foreach (var key in Models.SettingKeys.All())
         {
             var exists = dbContext.Settings.Find(key);
             if (exists == null)
@@ -89,8 +101,8 @@ public partial class App : Application
             }
         }
 
-        // Remove any settings that are not declared in KEYS
-        var allowed = new System.Collections.Generic.HashSet<string>(Models.KEYS.All());
+        // Remove any settings that are not declared in SettingKeys
+        var allowed = new System.Collections.Generic.HashSet<string>(Models.SettingKeys.All());
         var toRemove = dbContext.Settings
             .Where(s => !allowed.Contains(s.Key))
             .ToList();

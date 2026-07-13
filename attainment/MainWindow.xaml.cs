@@ -8,15 +8,28 @@ namespace attainment;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow(MainWindowViewModel vm, Views.ProductPage productPage)
+    private readonly Views.ResourcePage _resourcePage;
+
+    public MainWindow(
+        MainWindowViewModel vm,
+        Views.SubjectsPage subjectsPage,
+        Views.ResourcePage resourcePage,
+        Views.ProductPage productPage,
+        Views.SettingsPage settingsPage)
     {
         InitializeComponent();
         DataContext = vm;
+        _resourcePage = resourcePage;
 
-        // Inject ProductPage instance created by DI into the Products tab
-        if (ProductsFrame != null)
-        {
-            ProductsFrame.Content = productPage;
-        }
+        SubjectsFrame.Content = subjectsPage;
+        ResourcesFrame.Content = resourcePage;
+        ProductsFrame.Content = productPage;
+        SettingsFrame.Content = settingsPage;
+    }
+
+    public void OpenResourcesForSubject(int subjectId)
+    {
+        MainTabControl.SelectedIndex = 1;
+        _resourcePage.SelectSubject(subjectId);
     }
 }

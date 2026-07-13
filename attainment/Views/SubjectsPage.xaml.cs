@@ -1,210 +1,180 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.EntityFrameworkCore;
-using attainment.Models;
+using attainment.Application;
 using attainment.Controls;
+using attainment.Models;
 
-namespace attainment.Views
+namespace attainment.Views;
+
+public partial class SubjectsPage : Page
 {
-    /// <summary>
-    /// Interaction logic for SubjectsPage.xaml
-    /// </summary>
-    public partial class SubjectsPage : Page
+    private enum ViewMode
     {
-        private enum ViewMode
-        {
-            List,
-            Create
-        }
-        
-        private ApplicationDbContext _dbContext;
-        private List<Subject> _allSubjects = [];
-        private ViewMode _currentMode = ViewMode.List;
-        
-        public SubjectsPage()
-        {
-            InitializeComponent();
-            _dbContext = new ApplicationDbContext();
-            LoadSubjects();
+        List,
+        Create
+    }
 
-            // Listen for delete requests bubbling up from SubjectCard context menus
-            SubjectsItemsControl.AddHandler(SubjectCard.DeleteRequestedEvent, new RoutedEventHandler(SubjectCard_DeleteRequested));
+    private readonly ISubjectService _subjectService;
+    private List<Subject> _allSubjects = [];
 
-            // Listen for open requests (left click) to navigate to ResourcePage
-            SubjectsItemsControl.AddHandler(SubjectCard.OpenRequestedEvent, new RoutedEventHandler(SubjectCard_OpenRequested));
-        }
+    public SubjectsPage(ISubjectService subjectService)
+    {
+        InitializeComponent();
+        _subjectService = subjectService;
+        Loaded += SubjectsPage_Loaded;
 
-        private async void LoadSubjects()
+        SubjectsItemsControl.AddHandler(
+            SubjectCard.DeleteRequestedEvent,
+            new RoutedEventHandler(SubjectCard_DeleteRequested));
+        SubjectsItemsControl.AddHandler(
+            SubjectCard.OpenRequestedEvent,
+            new RoutedEventHandler(SubjectCard_OpenRequested));
+        SubjectsItemsControl.AddHandler(
+            SubjectCard.FavoriteChangedEvent,
+            new RoutedEventHandler(SubjectCard_FavoriteChanged));
+    }
+
+    private async void SubjectsPage_Loaded(object sender, RoutedEventArgs e)
+    {
+        await LoadSubjectsAsync();
+    }
+
+    private async Task LoadSubjectsAsync()
+    {
+        try
         {
-            try
-            {
-                // Load subjects from database
-                _allSubjects = await _dbContext.Subjects.ToListAsync();
-                SubjectsItemsControl.ItemsSource = _allSubjects;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading subjects: {ex.Message}", "Database Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void SubjectSearchBar_SearchTextChanged(object sender, RoutedEventArgs e)
-        {
+            _allSubjects = [.. await _subjectService.GetAllAsync()];
             ApplyFilter();
         }
-
-        private void SubjectSearchBar_SearchSubmitted(object sender, RoutedEventArgs e)
+        catch (Exception ex)
         {
-            ApplyFilter();
+            MessageBox.Show($"Error loading subjects: {ex.Message}", "Database Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void SubjectSearchBar_SearchTextChanged(object sender, RoutedEventArgs e) => ApplyFilter();
+
+    private void SubjectSearchBar_SearchSubmitted(object sender, RoutedEventArgs e) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        var searchTerm = (SubjectSearchBar?.Text ?? string.Empty).Trim();
+        SubjectsItemsControl.ItemsSource = string.IsNullOrEmpty(searchTerm)
+            ? _allSubjects
+            : _allSubjects.Where(subject =>
+                subject.Name.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                (subject.Description?.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ?? false))
+                .ToList();
+    }
+
+    private void AddSubjectButton_Click(object sender, RoutedEventArgs e) => SwitchMode(ViewMode.Create);
+
+    private void CancelButton_Click(object sender, RoutedEventArgs e) => SwitchMode(ViewMode.List);
+
+    private async void SaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(SubjectNameTextBox.Text))
+        {
+            MessageBox.Show("Subject name is required.", "Validation Error",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
 
-        private void ApplyFilter()
+        try
         {
-            string searchTerm = (SubjectSearchBar?.Text ?? string.Empty).Trim().ToLower();
-            
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                SubjectsItemsControl.ItemsSource = _allSubjects;
-                return;
-            }
-            
-            var filteredSubjects = _allSubjects.Where(s => 
-                s.Name.ToLower().Contains(searchTerm) || 
-                (s.Description != null && s.Description.ToLower().Contains(searchTerm))
-            ).ToList();
-            
-            SubjectsItemsControl.ItemsSource = filteredSubjects;
-        }
-
-        private void AddSubjectButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Switch to creation mode
-            SwitchMode(ViewMode.Create);
-        }
-        
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Switch back to list mode without saving
+            await _subjectService.CreateAsync(
+                SubjectNameTextBox.Text,
+                DescriptionTextBox.Text,
+                IsFavoriteCheckBox.IsChecked ?? false);
+            await LoadSubjectsAsync();
             SwitchMode(ViewMode.List);
         }
-        
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        catch (DuplicateNameException ex)
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(SubjectNameTextBox.Text))
+            MessageBox.Show(ex.Message, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving subject: {ex.Message}", "Database Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void SubjectCard_DeleteRequested(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not SubjectCard { Subject: Subject subject })
+        {
+            return;
+        }
+
+        try
+        {
+            var impact = await _subjectService.GetDeletionImpactAsync(subject.Id);
+            var message = impact.ResourceCount == 0
+                ? $"Delete '{subject.Name}'?"
+                : $"Delete '{subject.Name}' and its {impact.ResourceCount} resources and {impact.ProductCount} products? This cannot be undone.";
+
+            if (MessageBox.Show(message, "Confirm deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning) !=
+                MessageBoxResult.Yes)
             {
-                MessageBox.Show("Subject name is required.", "Validation Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            
-            try
-            {
-                // Create new subject from form data
-                var newSubject = new Subject
-                {
-                    Name = SubjectNameTextBox.Text.Trim(),
-                    Description = DescriptionTextBox.Text.Trim(),
-                    IsFavorite = IsFavoriteCheckBox.IsChecked ?? false
-                };
-                
-                // Add to database and save changes
-                _dbContext.Subjects.Add(newSubject);
-                await _dbContext.SaveChangesAsync();
-                
-                // Reload subjects to show the new one
-                LoadSubjects();
-                
-                // Switch back to list mode
-                SwitchMode(ViewMode.List);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error saving subject: {ex.Message}", "Database Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-    
-        private async void SubjectCard_DeleteRequested(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (e.OriginalSource is SubjectCard card && card.Subject is Subject subject)
-                {
-                    // Remove the subject from the database
-                    _dbContext.Subjects.Remove(subject);
-                    await _dbContext.SaveChangesAsync();
 
-                    // Reload subjects from the database to refresh the view
-                    LoadSubjects();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error deleting subject: {ex.Message}", "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            await _subjectService.DeleteAsync(subject.Id);
+            await LoadSubjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error deleting subject: {ex.Message}", "Database Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void SubjectCard_OpenRequested(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is SubjectCard { Subject: Subject subject } &&
+            System.Windows.Application.Current?.MainWindow is MainWindow mainWindow)
+        {
+            mainWindow.OpenResourcesForSubject(subject.Id);
+        }
+    }
+
+    private async void SubjectCard_FavoriteChanged(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not SubjectCard { Subject: Subject subject })
+        {
+            return;
         }
 
-        private void SubjectCard_OpenRequested(object sender, RoutedEventArgs e)
+        try
         {
-            if (e.OriginalSource is SubjectCard card && card.Subject is Subject subject)
-            {
-                // When a subject card is clicked, switch to the Resources tab and navigate there
-                var mainWindow = Application.Current?.MainWindow as MainWindow;
-                if (mainWindow != null)
-                {
-                    // Find controls by name to avoid relying on field access modifiers
-                    var tabControl = mainWindow.FindName("MainTabControl") as TabControl;
-                    var resourcesFrame = mainWindow.FindName("ResourcesFrame") as Frame;
-
-                    // Select the Resources tab (index 1)
-                    if (tabControl != null)
-                    {
-                        tabControl.SelectedIndex = 1;
-                    }
-
-                    // Navigate the Resources frame to the ResourcePage for this subject
-                    resourcesFrame?.Navigate(new ResourcePage(subject));
-                }
-                else
-                {
-                    // Fallback: try page-local navigation if for some reason main window is unavailable
-                    this.NavigationService?.Navigate(new ResourcePage(subject));
-                }
-            }
+            await _subjectService.SetFavoriteAsync(subject.Id, subject.IsFavorite);
         }
-
-        private void SwitchMode(ViewMode mode)
+        catch (Exception ex)
         {
-            _currentMode = mode;
-            
-            switch (mode)
-            {
-                case ViewMode.List:
-                    // Show list view, hide creation view
-                    SubjectsListView.Visibility = Visibility.Visible;
-                    CreateSubjectView.Visibility = Visibility.Collapsed;
-                    break;
-                    
-                case ViewMode.Create:
-                    // Reset form fields
-                    SubjectNameTextBox.Text = string.Empty;
-                    DescriptionTextBox.Text = string.Empty;
-                    IsFavoriteCheckBox.IsChecked = false;
-                    
-                    // Show creation view, hide list view
-                    SubjectsListView.Visibility = Visibility.Collapsed;
-                    CreateSubjectView.Visibility = Visibility.Visible;
-                    
-                    // Set focus to the name field
-                    SubjectNameTextBox.Focus();
-                    break;
-            }
+            MessageBox.Show($"Error saving favorite: {ex.Message}", "Database Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            await LoadSubjectsAsync();
+        }
+    }
+
+    private void SwitchMode(ViewMode mode)
+    {
+        switch (mode)
+        {
+            case ViewMode.List:
+                SubjectsListView.Visibility = Visibility.Visible;
+                CreateSubjectView.Visibility = Visibility.Collapsed;
+                break;
+            case ViewMode.Create:
+                SubjectNameTextBox.Text = string.Empty;
+                DescriptionTextBox.Text = string.Empty;
+                IsFavoriteCheckBox.IsChecked = false;
+                SubjectsListView.Visibility = Visibility.Collapsed;
+                CreateSubjectView.Visibility = Visibility.Visible;
+                SubjectNameTextBox.Focus();
+                break;
         }
     }
 }

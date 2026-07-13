@@ -3,11 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:models="clr-namespace:attainment.Models"
              mc:Ignorable="d"
              d:DesignHeight="120" d:DesignWidth="200"
              x:Name="root">
-    
     <UserControl.Resources>
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
@@ -21,8 +19,10 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    
-    <Border DataContext="{Binding Subject, ElementName=root}" Style="{StaticResource CardStyle}" Padding="12">
+
+    <Border DataContext="{Binding Subject, ElementName=root}"
+            Style="{StaticResource CardStyle}"
+            Padding="12">
         <Border.ContextMenu>
             <ContextMenu>
                 <MenuItem Header="Delete" Foreground="Red" Click="DeleteMenuItem_Click"/>
@@ -34,41 +34,38 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            
-            <Grid  Grid.Row="0">
+
+            <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
-                <!-- Subject Name -->
-                <TextBlock Grid.Column="0" 
-                           Text="{Binding Name}" 
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Name}"
                            FontWeight="Bold"
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center"/>
-                
-                <!-- Favorite Icon -->
+
                 <ToggleButton Grid.Column="1"
                               IsChecked="{Binding IsFavorite, Mode=TwoWay}"
                               Margin="5,0,0,0"
                               ToolTip="Favorite"
-                              Content="★"
+                              Content="&#x2605;"
                               Foreground="{Binding IsFavorite, Converter={StaticResource FavoriteColorConverter}}"
                               Background="Transparent"
-                              BorderThickness="0"/>
+                              BorderThickness="0"
+                              Click="FavoriteButton_Click"/>
             </Grid>
-            
-            <!-- Description -->
+
             <TextBlock Grid.Row="1"
                        Text="{Binding Description}"
                        TextWrapping="Wrap"
                        TextTrimming="CharacterEllipsis"
                        Foreground="#666666"
                        Margin="0,5,0,0"/>
-            
-            <!-- Resource Count -->
-            <StackPanel Grid.Row="2" 
+
+            <StackPanel Grid.Row="2"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="0,5,0,0">

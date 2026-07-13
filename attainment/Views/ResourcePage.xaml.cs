@@ -6,10 +6,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.IO;
 using System.Diagnostics;
-using Microsoft.EntityFrameworkCore;
 using attainment.Models;
 using Microsoft.Win32;
 using Microsoft.Extensions.DependencyInjection;
+using attainment.Application;
 
 namespace attainment.Views
 {
@@ -24,25 +24,28 @@ namespace attainment.Views
             Create
         }
 
-        private readonly ApplicationDbContext _dbContext = new ApplicationDbContext();
-        private Subject? _initialSubject;
+        private readonly IResourceService _resourceService;
+        private int? _initialSubjectId;
         private List<Subject> _allSubjects = [];
         private List<Resource> _allResources = [];
         private bool _subjectsLoaded = false;
         private ViewMode _currentMode = ViewMode.List;
 
-        // Parameterless constructor for XAML navigation (Resources tab direct click)
-        public ResourcePage()
+        public ResourcePage(IResourceService resourceService)
         {
             InitializeComponent();
+            _resourceService = resourceService;
             Loaded += ResourcePage_Loaded;
         }
 
-        public ResourcePage(Subject subject)
+        public void SelectSubject(int subjectId)
         {
-            InitializeComponent();
-            _initialSubject = subject;
-            Loaded += ResourcePage_Loaded;
+            _initialSubjectId = subjectId;
+            if (_subjectsLoaded)
+            {
+                SubjectsComboBox.SelectedValue = subjectId;
+                ApplyFilter();
+            }
         }
 
         private async void ResourcePage_Loaded(object sender, RoutedEventArgs e)
@@ -88,7 +91,7 @@ namespace attainment.Views
                     else
                     {
                         // Fallback: try to find parent frame
-                        var window = Application.Current.MainWindow as MainWindow;
+                        var window = System.Windows.Application.Current.MainWindow as MainWindow;
                         window?.ResourcesFrame?.Navigate(page);
                     }
                 }
@@ -103,9 +106,7 @@ namespace attainment.Views
         {
             try
             {
-                _allSubjects = await _dbContext.Subjects
-                    .OrderBy(s => s.Name)
-                    .ToListAsync();
+                _allSubjects = [.. await _resourceService.GetSubjectsAsync()];
 
                 // Insert an "All subjects" pseudo-item at the top
                 var allItem = new Subject { Id = 0, Name = "All subjects" };
@@ -113,7 +114,7 @@ namespace attainment.Views
                 subjectsForCombo.AddRange(_allSubjects);
 
                 SubjectsComboBox.ItemsSource = subjectsForCombo;
-                SubjectsComboBox.SelectedValue = _initialSubject?.Id ?? 0;
+                SubjectsComboBox.SelectedValue = _initialSubjectId ?? 0;
             }
             catch (Exception ex)
             {
@@ -126,10 +127,7 @@ namespace attainment.Views
         {
             try
             {
-                _allResources = await _dbContext.Resources
-                    .Include(r => r.Subject)
-                    .OrderByDescending(r => r.CreatedAt)
-                    .ToListAsync();
+                _allResources = [.. await _resourceService.GetAllAsync()];
             }
             catch (Exception ex)
             {
@@ -244,14 +242,6 @@ namespace attainment.Views
                 return;
             }
 
-            // Validate title uniqueness (case-insensitive)
-            bool exists = await _dbContext.Resources.AnyAsync(r => r.Title.ToLower() == title.ToLower());
-            if (exists)
-            {
-                MessageBox.Show("A resource with the same title already exists.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             // Validate file if provided
             string? filePath = string.IsNullOrWhiteSpace(CreateFileTextBox.Text) ? null : CreateFileTextBox.Text.Trim();
             if (!string.IsNullOrEmpty(filePath))
@@ -272,21 +262,16 @@ namespace attainment.Views
 
             try
             {
-                var resource = new Resource
-                {
-                    Title = title,
-                    SubjectId = subjectId,
-                    FilePath = filePath,
-                    CreatedAt = DateTime.Now
-                };
-
-                _dbContext.Resources.Add(resource);
-                await _dbContext.SaveChangesAsync();
+                await _resourceService.CreateAsync(title, subjectId, filePath);
 
                 // Reload and return to list
                 await LoadResourcesAsync();
                 ApplyFilter();
                 SwitchMode(ViewMode.List);
+            }
+            catch (DuplicateNameException ex)
+            {
+                MessageBox.Show(ex.Message, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             catch (Exception ex)
             {

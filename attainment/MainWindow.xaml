@@ -29,16 +29,16 @@
     <Grid Margin="15">
         <TabControl x:Name="MainTabControl" Style="{StaticResource ModernTabControl}">
             <TabItem Header="Subjects" IsSelected="True" Style="{StaticResource ModernTabItem}">
-                <Frame x:Name="SubjectsFrame" NavigationUIVisibility="Hidden" Source="/Views/SubjectsPage.xaml"/>
+                <Frame x:Name="SubjectsFrame" NavigationUIVisibility="Hidden"/>
             </TabItem>
             <TabItem Header="Resources" Style="{StaticResource ModernTabItem}">
-                <Frame x:Name="ResourcesFrame" NavigationUIVisibility="Hidden" Source="/Views/ResourcePage.xaml"/>
+                <Frame x:Name="ResourcesFrame" NavigationUIVisibility="Hidden"/>
             </TabItem>
             <TabItem Header="Products" Style="{StaticResource ModernTabItem}">
                 <Frame x:Name="ProductsFrame" NavigationUIVisibility="Hidden" />
             </TabItem>
             <TabItem Header="Settings" Style="{StaticResource ModernTabItem}">
-                <Frame x:Name="SettingsFrame" NavigationUIVisibility="Hidden" Source="/Views/SettingsPage.xaml"/>
+                <Frame x:Name="SettingsFrame" NavigationUIVisibility="Hidden"/>
             </TabItem>
         </TabControl>
     </Grid>

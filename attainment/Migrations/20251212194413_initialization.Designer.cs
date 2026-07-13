@@ -12,7 +12,7 @@ namespace attainment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20251212194413_initialization")]
-    partial class initialization
+    partial class Initialization
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
