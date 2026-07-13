@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Attainment · Revisión de arquitectura y guía WPF</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef3fa;
+      --text: #172033;
+      --muted: #5d6b82;
+      --border: #dce4ef;
+      --brand: #4f46e5;
+      --brand-2: #7c3aed;
+      --critical: #b42318;
+      --high: #b54708;
+      --medium: #175cd3;
+      --good: #067647;
+      --code-bg: #111827;
+      --code-text: #e5e7eb;
+      --shadow: 0 16px 45px rgba(15, 23, 42, .09);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #172033;
+      --text: #edf2f7;
+      --muted: #aebbd0;
+      --border: #2a3850;
+      --brand: #8b83ff;
+      --brand-2: #b28cff;
+      --critical: #ff8a80;
+      --high: #ffc46b;
+      --medium: #77b5ff;
+      --good: #5ed6a0;
+      --code-bg: #070b13;
+      --code-text: #edf2f7;
+      --shadow: 0 16px 45px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.62;
+    }
+    a { color: var(--brand); }
+    code, pre { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+    code { font-size: .92em; }
+
+    .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 26px 20px;
+      border-right: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .brand-mark {
+      width: 42px; height: 42px; display: grid; place-items: center;
+      border-radius: 12px; color: white; font-weight: 800;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      box-shadow: var(--shadow);
+    }
+    .brand strong { display: block; font-size: 1rem; }
+    .brand span { display: block; color: var(--muted); font-size: .78rem; }
+    nav a {
+      display: block; padding: 8px 10px; margin: 2px 0; border-radius: 8px;
+      color: var(--muted); text-decoration: none; font-size: .9rem;
+    }
+    nav a:hover, nav a.active { color: var(--text); background: var(--surface-2); }
+    .nav-label { margin: 18px 10px 7px; color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .theme-button {
+      width: 100%; margin-top: 20px; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 9px; background: var(--surface); color: var(--text); cursor: pointer;
+    }
+
+    main { min-width: 0; }
+    .hero {
+      padding: 72px clamp(24px, 6vw, 90px) 58px;
+      color: white;
+      background:
+        radial-gradient(circle at 85% 20%, rgba(255,255,255,.22), transparent 24%),
+        linear-gradient(135deg, #312e81, #5b21b6 58%, #7c3aed);
+    }
+    .eyebrow { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .13em; opacity: .82; }
+    h1 { max-width: 900px; margin: 12px 0 16px; font-size: clamp(2.2rem, 5vw, 4.6rem); line-height: 1.02; letter-spacing: -.045em; }
+    .hero p { max-width: 820px; margin: 0; font-size: clamp(1rem, 2vw, 1.22rem); opacity: .9; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .hero-meta span { padding: 7px 11px; border: 1px solid rgba(255,255,255,.28); border-radius: 99px; background: rgba(255,255,255,.10); font-size: .82rem; }
+
+    .content { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 42px 0 90px; }
+    section { scroll-margin-top: 24px; margin: 0 0 58px; }
+    h2 { margin: 0 0 18px; font-size: clamp(1.7rem, 3vw, 2.55rem); letter-spacing: -.03em; line-height: 1.15; }
+    h3 { margin: 28px 0 10px; font-size: 1.25rem; line-height: 1.3; }
+    h4 { margin: 18px 0 8px; }
+    p { margin: 0 0 14px; }
+    .lead { color: var(--muted); font-size: 1.08rem; max-width: 900px; }
+
+    .callout, .card {
+      border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow);
+    }
+    .callout { padding: 20px 22px; border-left: 5px solid var(--brand); }
+    .callout.warning { border-left-color: var(--high); }
+    .callout.danger { border-left-color: var(--critical); }
+    .callout.success { border-left-color: var(--good); }
+    .callout strong { display: block; margin-bottom: 4px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { grid-column: span 4; padding: 20px; }
+    .card.wide { grid-column: span 6; }
+    .card.full { grid-column: 1 / -1; }
+    .metric { font-size: 2rem; font-weight: 800; letter-spacing: -.04em; }
+    .muted { color: var(--muted); }
+    .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 4px 9px; font-size: .74rem; font-weight: 800; }
+    .p0 { color: var(--critical); background: color-mix(in srgb, var(--critical) 12%, transparent); }
+    .p1 { color: var(--high); background: color-mix(in srgb, var(--high) 12%, transparent); }
+    .p2 { color: var(--medium); background: color-mix(in srgb, var(--medium) 12%, transparent); }
+    .ok { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+
+    .diagram { overflow: auto; padding: 22px; }
+    .flow { min-width: 760px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: stretch; gap: 12px; }
+    .flow-box { position: relative; padding: 16px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-2); }
+    .flow-box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; z-index: 2; color: var(--brand); font-weight: 900; }
+    .flow-box b { display: block; margin-bottom: 5px; }
+    .flow-box small { color: var(--muted); }
+
+    .finding { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 18px; padding: 22px 0; border-top: 1px solid var(--border); }
+    .finding:first-of-type { border-top: 0; }
+    .finding h3 { margin: 0 0 6px; }
+    .finding p { margin-bottom: 8px; }
+    .file { display: inline-block; margin: 2px 4px 2px 0; padding: 3px 7px; border-radius: 6px; color: var(--muted); background: var(--surface-2); font-family: "Cascadia Code", monospace; font-size: .79rem; }
+    .decision { color: var(--good); font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; background: var(--surface); }
+    th, td { padding: 11px 12px; text-align: left; vertical-align: top; border: 1px solid var(--border); }
+    th { background: var(--surface-2); font-size: .82rem; }
+
+    .code-wrap { position: relative; margin: 14px 0 22px; }
+    pre { overflow: auto; margin: 0; padding: 20px; border-radius: 12px; background: var(--code-bg); color: var(--code-text); line-height: 1.5; font-size: .86rem; }
+    .copy { position: absolute; top: 9px; right: 9px; border: 1px solid #45516a; border-radius: 7px; padding: 5px 8px; color: #e5e7eb; background: #1f2937; cursor: pointer; font-size: .72rem; }
+    .inline-list { padding-left: 20px; }
+    .inline-list li { margin-bottom: 7px; }
+
+    .steps { counter-reset: step; }
+    .step { position: relative; padding: 0 0 30px 54px; }
+    .step::before {
+      counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+      width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+      color: white; background: linear-gradient(135deg, var(--brand), var(--brand-2)); font-weight: 800;
+    }
+    .step::after { content: ""; position: absolute; left: 16px; top: 39px; bottom: 4px; width: 2px; background: var(--border); }
+    .step:last-child::after { display: none; }
+    .step h3 { margin-top: 0; }
+
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { position: relative; padding: 7px 0 7px 30px; }
+    .checklist li::before { content: "✓"; position: absolute; left: 0; color: var(--good); font-weight: 900; }
+    footer { padding: 28px 20px; text-align: center; color: var(--muted); border-top: 1px solid var(--border); }
+
+    @media (max-width: 980px) {
+      .layout { display: block; }
+      aside { position: static; width: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      nav { display: none; }
+      .theme-button { width: auto; }
+      .card, .card.wide { grid-column: span 6; }
+    }
+    @media (max-width: 640px) {
+      .hero { padding: 48px 22px; }
+      .content { width: min(100% - 28px, 1120px); }
+      .card, .card.wide { grid-column: 1 / -1; }
+      .finding { grid-template-columns: 1fr; gap: 8px; }
+      th, td { padding: 8px; }
+    }
+    @media print {
+      aside, .copy, .theme-button { display: none !important; }
+      .layout { display: block; }
+      .hero { padding: 28px; background: #312e81 !important; print-color-adjust: exact; }
+      .content { width: 100%; padding: 24px; }
+      section { break-inside: avoid; }
+      .card, .callout { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div><strong>Attainment</strong><span>Architecture &amp; WPF field guide</span></div>
+    </div>
+    <nav id="nav">
+      <div class="nav-label">Revisión</div>
+      <a href="#resumen">Resumen ejecutivo</a>
+      <a href="#arquitectura">Arquitectura actual</a>
+      <a href="#hallazgos">Hallazgos priorizados</a>
+      <a href="#roadmap">Roadmap recomendado</a>
+      <div class="nav-label">Guía WPF</div>
+      <a href="#wpf">Qué librería usa</a>
+      <a href="#xaml">Modelo mental de XAML</a>
+      <a href="#binding">Binding y MVVM</a>
+      <a href="#di">DI y servicios</a>
+      <a href="#datos">EF Core y SQLite</a>
+      <a href="#async">Asincronía</a>
+      <a href="#feature">Añadir una funcionalidad</a>
+      <a href="#debug">Depuración y pruebas</a>
+      <a href="#comandos">Comandos de trabajo</a>
+      <a href="#checklist">Checklist</a>
+    </nav>
+    <button class="theme-button" id="themeButton" type="button">Cambiar tema</button>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Revisión técnica · 13 julio 2026</div>
+      <h1>Attainment: revisión senior y guía práctica de WPF</h1>
+      <p>Un informe accionable sobre la codebase actual y una guía orientada a construir aplicaciones desktop con WPF, XAML, MVVM, inyección de dependencias y EF Core.</p>
+      <div class="hero-meta">
+        <span>.NET 10 / WPF</span><span>EF Core + SQLite</span><span>QuestPDF + PdfPig</span><span>OpenAI REST</span><span>Documento offline</span>
+      </div>
+    </header>
+
+    <div class="content">
+      <section id="resumen">
+        <h2>Resumen ejecutivo</h2>
+        <p class="lead">Attainment es un prototipo funcional y pequeño, con una intención arquitectónica correcta —WPF, DI, EF Core y servicios aislados— pero la implementación mezcla MVVM y code-behind, elude el contenedor en varias vistas y contiene defectos que bloquean o rompen flujos importantes.</p>
+
+        <div class="grid">
+          <div class="card"><div class="metric">3</div><strong>problemas críticos/altos inmediatos</strong><p class="muted">SDK inválido, petición de archivo a IA incompatible y recarga de Settings defectuosa.</p></div>
+          <div class="card"><div class="metric">1</div><strong>prueba automatizada</strong><p class="muted">Sólo cubre el happy path de deserialización del examen.</p></div>
+          <div class="card"><div class="metric">4</div><strong>capas implícitas</strong><p class="muted">XAML, code-behind/ViewModels, infraestructura y EF Core, sin capa de aplicación clara.</p></div>
+        </div>
+
+        <div class="callout danger" style="margin-top:18px">
+          <strong>Estado de compilación verificado</strong>
+          <p><code>dotnet build attainment.sln</code> no llega a ejecutarse: <code>global.json</code> solicita <code>10.0.0</code>, que no es una versión válida de SDK. Los SDK usan bandas como <code>10.0.100</code>. La máquina sólo expone el SDK <code>8.0.416</code>.</p>
+        </div>
+
+        <h3>Lo que está bien encaminado</h3>
+        <ul class="inline-list">
+          <li>Las responsabilidades externas ya tienen interfaces (<code>IAi</code>, <code>IPdf</code>), una buena base para pruebas y sustitución.</li>
+          <li>Se usa <code>IDbContextFactory&lt;ApplicationDbContext&gt;</code> en el registro de servicios, que es el patrón adecuado para una app desktop.</li>
+          <li>Los estilos compartidos y converters viven en recursos de aplicación y controles reutilizables.</li>
+          <li>La navegación por páginas y el dominio Subject → Resource → Product son comprensibles.</li>
+          <li>El flujo de examen separa generación, parsing, preview y exportación PDF.</li>
+        </ul>
+      </section>
+
+      <section id="arquitectura">
+        <h2>Arquitectura actual</h2>
+        <p class="lead">El proyecto usa WPF nativo. No hay una librería de UI externa: XAML es el lenguaje declarativo de WPF, no un framework adicional.</p>
+        <div class="card full diagram">
+          <div class="flow">
+            <div class="flow-box"><b>Views / Controls</b><small>XAML + eventos en code-behind. Pages alojadas en Frames.</small></div>
+            <div class="flow-box"><b>ViewModels parciales</b><small>Estado del examen y dos ViewModels casi vacíos.</small></div>
+            <div class="flow-box"><b>Infrastructure</b><small>OpenAI REST, PdfPig, QuestPDF y parser JSON.</small></div>
+            <div class="flow-box"><b>Persistence</b><small>EF Core 10, SQLite y una migración inicial.</small></div>
+          </div>
+        </div>
+        <p>El problema principal no es la elección tecnológica, sino el límite entre capas: la mayoría de páginas instancia su propio <code>ApplicationDbContext</code>, manipula controles por nombre y contiene lógica de aplicación. Por ello DI y MVVM sólo se aplican en una parte del sistema.</p>
+
+        <table>
+          <thead><tr><th>Área</th><th>Estado</th><th>Dirección recomendada</th></tr></thead>
+          <tbody>
+            <tr><td>Presentación</td><td>Eventos + controles nombrados + algo de binding</td><td>MVVM consistente, comandos y estados observables</td></tr>
+            <tr><td>Aplicación</td><td>No existe explícitamente</td><td>Casos de uso/servicios para Subjects, Resources, Products y Exams</td></tr>
+            <tr><td>Datos</td><td>Contextos largos creados con <code>new</code></td><td><code>IDbContextFactory</code>, contexto corto por operación</td></tr>
+            <tr><td>Integraciones</td><td>Sincrónicas y con contrato débil</td><td>APIs async, cancelación, timeouts y DTOs validados</td></tr>
+            <tr><td>Calidad</td><td>Una prueba unitaria</td><td>Pirámide: dominio, servicios, integración SQLite y pocos tests UI</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="hallazgos">
+        <h2>Hallazgos priorizados</h2>
+        <p class="lead">La prioridad combina impacto funcional, riesgo de datos, seguridad, mantenibilidad y coste de corrección.</p>
+
+        <div class="finding">
+          <div><span class="pill p0">P0</span></div>
+          <div><h3><code>global.json</code> bloquea el toolchain</h3><p>La versión <code>10.0.0</code> no representa una banda válida del SDK. <code>rollForward: latestMajor</code> tampoco rescata un valor base inválido. Debe fijarse una versión instalable, por ejemplo <code>10.0.100</code>, y decidir conscientemente si se permiten previews.</p><span class="file">global.json:3</span><span class="file">global.json:4</span><p class="decision">Cambio: fijar SDK válido, añadir instrucciones de bootstrap y validar en CI.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p0">P0</span></div>
+          <div><h3>El flujo Base64 de OpenAI mezcla dos APIs incompatibles</h3><p>El payload usa contenido <code>input_file</code>/<code>input_text</code>, propio de una petición estructurada, pero se envía a <code>/v1/chat/completions</code>, sin <code>model</code>. Ese flujo fallará aunque la clave sea correcta. Además, el contrato devuelve <code>string</code> y oculta el shape de respuesta.</p><span class="file">attainment/Infrastructure/Ai.cs:46</span><span class="file">attainment/Infrastructure/Ai.cs:56</span><p class="decision">Cambio: escoger una única API, modelar request/response con DTOs y añadir tests HTTP con handler falso.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>Reload de Settings intenta recargar una Page como entidad EF</h3><p><code>_dbContext.Entry(this).ReloadAsync()</code> trata <code>SettingsPage</code> como una entidad del modelo. EF lanzará una excepción. La recarga debe descartar el contexto o recargar cada entidad registrada.</p><span class="file">attainment/Views/SettingsPage.xaml.cs:38</span><p class="decision">Cambio: mover Settings a un ViewModel/servicio y crear un contexto nuevo por carga o guardado.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>Persistencia inconsistente y contextos no liberados</h3><p>Subjects, Resources, Products y Settings crean <code>ApplicationDbContext</code> con <code>new</code> y lo mantienen durante toda la vida de la Page. Se ignora el factory registrado, crece el change tracker y no hay disposición determinista. Las vistas cargadas por URI XAML tampoco pasan por DI.</p><span class="file">attainment/Views/SubjectsPage.xaml.cs:30</span><span class="file">attainment/Views/ResourcePage.xaml.cs:27</span><span class="file">attainment/Views/ProductPage.xaml.cs:24</span><span class="file">attainment/Views/SettingsPage.xaml.cs:16</span><p class="decision">Cambio: resolver todas las vistas por DI y usar <code>await using var db = await factory.CreateDbContextAsync()</code> por operación.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3><code>EnsureCreated</code> y migraciones se ejecutan juntos</h3><p><code>EnsureCreated</code> evita el historial normal de migraciones y no debe mezclarse con <code>Migrate</code> en una base destinada a evolucionar. También falta garantizar el directorio cuando las opciones ya vienen configuradas por DI, porque <code>OnConfiguring</code> no entra en esa rama.</p><span class="file">attainment/App.xaml.cs:54</span><span class="file">attainment/App.xaml.cs:55</span><span class="file">attainment/Database.cs:47</span><p class="decision">Cambio: crear el directorio antes de configurar SQLite y usar sólo <code>MigrateAsync</code>.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>Clave API en texto plano y caché que no se invalida</h3><p>La clave se guarda en SQLite sin protección y <code>OpenAi</code> la conserva en <code>_apiKey</code>. Tras editar Settings, el singleton puede seguir usando el valor anterior. Además, el contexto creado para leerla no se dispone.</p><span class="file">attainment/Infrastructure/Ai.cs:21</span><span class="file">attainment/Infrastructure/Ai.cs:25</span><span class="file">attainment/App.xaml.cs:35</span><p class="decision">Cambio: Windows Credential Manager o DPAPI, proveedor de secretos y lectura actualizable.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>Trabajo bloqueante disfrazado con <code>Task.Run</code></h3><p>La integración usa <code>HttpClient.Send</code> y lecturas sincrónicas; la Page las mueve al thread pool. El parseo PDF ocurre sincrónicamente al asignar <code>Resource</code>, antes de que la vista pueda mostrar progreso. No hay timeout explícito, cancelación ni prevención robusta de doble clic.</p><span class="file">attainment/Infrastructure/Ai.cs:84</span><span class="file">attainment/ViewModels/ExamCreationViewModel.cs:96</span><span class="file">attainment/Views/ExamCreationPage.xaml.cs:35</span><p class="decision">Cambio: APIs <code>Task</code> nativas, <code>CancellationToken</code>, comando async y estados Idle/Loading/Success/Error.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>Favoritos y contador de recursos no son fiables</h3><p>El Toggle de favorito modifica la entidad enlazada pero no guarda cambios. Subjects se carga sin <code>Include</code> ni proyección de conteo, así que <code>Resources.Count</code> puede mostrar cero aunque existan recursos.</p><span class="file">attainment/Controls/SubjectCard.xaml:53</span><span class="file">attainment/Views/SubjectsPage.xaml.cs:45</span><span class="file">attainment/Controls/SubjectCard.xaml:75</span><p class="decision">Cambio: comando <code>ToggleFavorite</code> persistente y DTO proyectado con <code>ResourceCount</code>.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p1">P1</span></div>
+          <div><h3>La salida generada por IA no tiene validación de dominio</h3><p>Deserializar no garantiza que haya 3–6 opciones, números únicos, una respuesta correcta existente o campos no nulos. <code>QuestionVM</code> asume que Options siempre existe. La exportación puede perpetuar datos inválidos.</p><span class="file">attainment/Infrastructure/ExamRepository.cs:11</span><span class="file">attainment/Models/Product.cs:27</span><span class="file">attainment/ViewModels/ExamCreationViewModel.cs:304</span><p class="decision">Cambio: parser estricto que devuelva un Result tipado y validador de invariantes.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p2">P2</span></div>
+          <div><h3>MVVM está aplicado sólo al flujo de examen</h3><p><code>MainWindowViewModel</code> está vacío y <code>ProductPageViewModel</code> sólo expone IA; la lógica real vive en Pages. La navegación busca controles por nombre o usa el service locator global <code>App.Services</code>.</p><span class="file">attainment/ViewModels/MainWindowViewModel.cs:3</span><span class="file">attainment/ViewModels/ProductPageViewModel.cs:5</span><span class="file">attainment/Views/SubjectsPage.xaml.cs:158</span><span class="file">attainment/Views/ResourcePage.xaml.cs:66</span><p class="decision">Cambio: ViewModels por feature, comandos, <code>INavigationService</code> y code-behind limitado a detalles puramente visuales.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p2">P2</span></div>
+          <div><h3>Restricciones sólo en UI y sin respaldo de base de datos</h3><p>La unicidad de nombres se comprueba con consultas previas; dos operaciones concurrentes podrían insertar duplicados. Faltan índices únicos normalizados y longitudes coherentes en Product. Las eliminaciones en cascada tampoco piden confirmación.</p><span class="file">attainment/Views/ResourcePage.xaml.cs:239</span><span class="file">attainment/Views/ProductPage.xaml.cs:202</span><span class="file">attainment/Migrations/20251212194413_initialization.cs:73</span><p class="decision">Cambio: invariantes en modelo/base de datos, manejo de conflicto y confirmación de borrado con impacto.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p2">P2</span></div>
+          <div><h3>Rendimiento y accesibilidad de listas</h3><p><code>ItemsControl + WrapPanel</code> no virtualiza. Con muchos elementos, todos los controles se materializan. Hay textos hard-coded, navegación dependiente de ratón, ToggleButtons usados como opción única y escasa metadata de automatización.</p><span class="file">attainment/Views/SubjectsPage.xaml:29</span><span class="file">attainment/Views/ResourcePage.xaml:52</span><span class="file">attainment/Views/ProductPage.xaml:52</span><p class="decision">Cambio: control virtualizable, comandos de teclado, RadioButton para respuestas, recursos de idioma y AutomationProperties.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p2">P2</span></div>
+          <div><h3>Observabilidad, errores y pruebas insuficientes</h3><p>Los errores se muestran directamente con <code>ex.Message</code>, no hay logging estructurado ni diagnósticos persistentes. Una sola prueba cubre un JSON válido; no se prueban IA, SQLite, migraciones, PDF, validaciones ni ViewModels.</p><span class="file">attainment.test/UnitTest1.cs:8</span><span class="file">attainment/Infrastructure/Ai.cs:115</span><p class="decision">Cambio: <code>ILogger</code>, mensajes de usuario seguros y cobertura centrada en riesgos.</p></div>
+        </div>
+
+        <div class="finding">
+          <div><span class="pill p2">P2</span></div>
+          <div><h3>Calidad de dependencias y presentación</h3><p>PdfPig está en una build alpha fechada, la licencia de QuestPDF se configura dentro del método y existen caracteres mojibake (<code>â€¢</code>, <code>â˜…</code>). Conviene revisar estabilidad, licencias, encoding UTF‑8 y centralizar configuración.</p><span class="file">attainment/attainment.csproj:27</span><span class="file">attainment/Infrastructure/Pdf.cs:107</span><span class="file">attainment/Controls/SubjectCard.xaml:56</span><p class="decision">Cambio: política de dependencias, smoke tests PDF y archivos garantizados en UTF‑8.</p></div>
+        </div>
+      </section>
+
+      <section id="roadmap">
+        <h2>Roadmap recomendado</h2>
+        <div class="steps">
+          <div class="step"><h3>Fase 0 · Recuperar build y flujos críticos</h3><p>Corregir SDK, petición OpenAI con archivos, Reload de Settings y creación del directorio SQLite. Añadir smoke tests de arranque y del cliente HTTP.</p></div>
+          <div class="step"><h3>Fase 1 · Estabilizar datos y seguridad</h3><p>Usar sólo migraciones, proteger secretos, contextos cortos por operación, restricciones únicas, confirmaciones de cascada y validación estricta del examen.</p></div>
+          <div class="step"><h3>Fase 2 · Completar MVVM por feature</h3><p>Extraer ViewModels y servicios de aplicación de Subjects, Resources, Products y Settings. Introducir navegación tipada y comandos async.</p></div>
+          <div class="step"><h3>Fase 3 · Calidad operativa</h3><p>Logging, cancelación, localización, accesibilidad, virtualización, tests de integración y pipeline CI con build/test/publish.</p></div>
+        </div>
+      </section>
+
+      <section id="wpf">
+        <h2>Qué librería de escritorio usa el proyecto</h2>
+        <div class="callout success">
+          <strong>Attainment usa WPF nativo</strong>
+          <p><strong>WPF (Windows Presentation Foundation)</strong> es el framework desktop de .NET para Windows. <strong>XAML</strong> describe el árbol visual; C# aporta comportamiento, ViewModels y servicios. No hay Material Design, WPF UI, MahApps u otro toolkit visual instalado.</p>
+        </div>
+        <div class="grid" style="margin-top:18px">
+          <div class="card"><strong>WPF</strong><p class="muted">Ventanas, Pages, controles, layout, estilos, recursos, binding y dispatcher UI.</p></div>
+          <div class="card"><strong>EF Core + SQLite</strong><p class="muted">Persistencia local en <code>~/.attainment/attainment.db</code>.</p></div>
+          <div class="card"><strong>Generic Host</strong><p class="muted">DI, configuración y logging de <code>Microsoft.Extensions.*</code>.</p></div>
+          <div class="card"><strong>PdfPig</strong><p class="muted">Lectura y extracción de texto de PDF.</p></div>
+          <div class="card"><strong>QuestPDF</strong><p class="muted">Generación de documentos PDF desde C#.</p></div>
+          <div class="card"><strong>xUnit</strong><p class="muted">Framework de pruebas automatizadas.</p></div>
+        </div>
+      </section>
+
+      <section id="xaml">
+        <h2>Modelo mental de XAML</h2>
+        <p class="lead">Piensa en XAML como una forma declarativa de crear objetos .NET y colocarlos en un árbol. Cada etiqueta suele ser una clase; cada atributo, una propiedad.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>&lt;Grid Margin="20"&gt;
+  &lt;Grid.RowDefinitions&gt;
+    &lt;RowDefinition Height="Auto"/&gt;
+    &lt;RowDefinition Height="*"/&gt;
+  &lt;/Grid.RowDefinitions&gt;
+
+  &lt;TextBlock Text="Mis recursos" FontSize="24"/&gt;
+  &lt;ListBox Grid.Row="1" ItemsSource="{Binding Resources}"/&gt;
+&lt;/Grid&gt;</code></pre></div>
+        <ul class="inline-list">
+          <li><code>Auto</code>: la fila mide lo que necesita su contenido.</li>
+          <li><code>*</code>: consume el espacio restante; <code>2*</code> consume el doble que <code>*</code>.</li>
+          <li><code>Grid</code>: layout principal y predecible. <code>StackPanel</code>: secuencia simple. <code>DockPanel</code>: bordes. <code>WrapPanel</code>: tarjetas que saltan de línea.</li>
+          <li><code>x:Name</code> crea una referencia accesible desde code-behind, pero en MVVM se usa con moderación.</li>
+          <li><code>StaticResource</code> busca estilos, brushes o converters declarados en Resources.</li>
+        </ul>
+
+        <h3>Una vista son dos archivos</h3>
+        <table>
+          <thead><tr><th>Archivo</th><th>Responsabilidad</th><th>Qué evitar</th></tr></thead>
+          <tbody>
+            <tr><td><code>FooPage.xaml</code></td><td>Layout, bindings, templates, estilos, accesibilidad.</td><td>Lógica de negocio.</td></tr>
+            <tr><td><code>FooPage.xaml.cs</code></td><td><code>InitializeComponent</code> y detalles estrictamente visuales.</td><td>SQL/EF, HTTP, validación de dominio y navegación global.</td></tr>
+            <tr><td><code>FooPageViewModel.cs</code></td><td>Estado observable, comandos y coordinación de casos de uso.</td><td>Referencias directas a controles WPF.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Resources y estilos</h3>
+        <p>Un estilo evita repetir propiedades y permite tematizar. Attainment ya declara estilos globales en <code>App.xaml</code>.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>&lt;Application.Resources&gt;
+  &lt;SolidColorBrush x:Key="PrimaryBrush" Color="#4F46E5"/&gt;
+  &lt;Style x:Key="PrimaryButton" TargetType="Button"&gt;
+    &lt;Setter Property="Background" Value="{StaticResource PrimaryBrush}"/&gt;
+    &lt;Setter Property="Foreground" Value="White"/&gt;
+    &lt;Setter Property="Padding" Value="16,8"/&gt;
+  &lt;/Style&gt;
+&lt;/Application.Resources&gt;
+
+&lt;Button Content="Guardar" Style="{StaticResource PrimaryButton}"/&gt;</code></pre></div>
+      </section>
+
+      <section id="binding">
+        <h2>Binding y MVVM</h2>
+        <p class="lead">El binding conecta propiedades del control con propiedades del <code>DataContext</code>. En una Page MVVM, el DataContext suele ser su ViewModel.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>public sealed class SubjectsPageViewModel : INotifyPropertyChanged
+{
+    public ObservableCollection&lt;SubjectListItem&gt; Subjects { get; } = [];
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get =&gt; _searchText;
+        set
+        {
+            if (_searchText == value) return;
+            _searchText = value;
+            PropertyChanged?.Invoke(this,
+                new PropertyChangedEventArgs(nameof(SearchText)));
+        }
+    }
+
+    public ICommand RefreshCommand { get; }
+    public event PropertyChangedEventHandler? PropertyChanged;
+}</code></pre></div>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>&lt;TextBox Text="{Binding SearchText,
+                Mode=TwoWay,
+                UpdateSourceTrigger=PropertyChanged}"/&gt;
+
+&lt;Button Content="Actualizar" Command="{Binding RefreshCommand}"/&gt;
+
+&lt;ListBox ItemsSource="{Binding Subjects}"&gt;
+  &lt;ListBox.ItemTemplate&gt;
+    &lt;DataTemplate&gt;
+      &lt;TextBlock Text="{Binding Name}"/&gt;
+    &lt;/DataTemplate&gt;
+  &lt;/ListBox.ItemTemplate&gt;
+&lt;/ListBox&gt;</code></pre></div>
+
+        <table>
+          <thead><tr><th>Sintaxis</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td><code>{Binding Name}</code></td><td>Lee <code>DataContext.Name</code>.</td></tr>
+            <tr><td><code>Mode=TwoWay</code></td><td>UI ↔ ViewModel, típico en formularios.</td></tr>
+            <tr><td><code>OneWay</code></td><td>ViewModel → UI, típico en resultados.</td></tr>
+            <tr><td><code>UpdateSourceTrigger=PropertyChanged</code></td><td>Actualiza en cada pulsación, útil para búsquedas.</td></tr>
+            <tr><td><code>RelativeSource</code></td><td>Busca otro elemento/ancestro cuando el DataContext actual no basta.</td></tr>
+            <tr><td><code>Converter</code></td><td>Transforma valor visual; no debe contener lógica de negocio.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout warning"><strong>Regla práctica</strong><p>Si un click ejecuta un caso de uso, usa un <code>ICommand</code>. Si sólo mueve el foco, abre una animación o interactúa con un detalle visual, el code-behind es aceptable.</p></div>
+      </section>
+
+      <section id="di">
+        <h2>DI, ciclo de vida y navegación</h2>
+        <p class="lead">WPF no obliga a usar DI, pero Attainment ya usa Generic Host. La mejora consiste en hacer que todas las Pages, ViewModels y servicios entren por el mismo composition root.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>services.AddDbContextFactory&lt;ApplicationDbContext&gt;(options =&gt;
+    options.UseSqlite(connectionString));
+
+services.AddSingleton&lt;INavigationService, NavigationService&gt;();
+services.AddSingleton&lt;IAiClient, OpenAiClient&gt;();
+services.AddSingleton&lt;IPdfService, PdfService&gt;();
+
+services.AddTransient&lt;SubjectsPageViewModel&gt;();
+services.AddTransient&lt;SubjectsPage&gt;();
+services.AddTransient&lt;ResourcePageViewModel&gt;();
+services.AddTransient&lt;ResourcePage&gt;();</code></pre></div>
+
+        <h3>Cómo elegir lifetime</h3>
+        <table>
+          <thead><tr><th>Lifetime</th><th>Úsalo para</th><th>No para</th></tr></thead>
+          <tbody>
+            <tr><td><code>Singleton</code></td><td>Servicios stateless/thread-safe, navegación, configuración.</td><td>Estado mutable de una pantalla o <code>DbContext</code>.</td></tr>
+            <tr><td><code>Transient</code></td><td>Pages y ViewModels nuevos por navegación.</td><td>Recursos caros que deban compartirse.</td></tr>
+            <tr><td><code>Scoped</code></td><td>Útil si defines scope por workflow/ventana.</td><td>No asumir “scope por request” como en ASP.NET.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Evita service locator</h3>
+        <p><code>App.Services.GetRequiredService&lt;T&gt;()</code> desde una Page oculta dependencias. Prefiere inyectar <code>INavigationService</code> en el ViewModel y pedir navegación con parámetros tipados.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>public interface INavigationService
+{
+    void NavigateTo&lt;TViewModel&gt;(object? parameter = null);
+    bool CanGoBack { get; }
+    void GoBack();
+}
+
+public sealed class SubjectsPageViewModel(INavigationService navigation)
+{
+    public ICommand OpenSubjectCommand =&gt; new RelayCommand&lt;SubjectListItem&gt;(
+        subject =&gt; navigation.NavigateTo&lt;ResourcePageViewModel&gt;(subject.Id));
+}</code></pre></div>
+      </section>
+
+      <section id="datos">
+        <h2>EF Core y SQLite en desktop</h2>
+        <p class="lead">En WPF, una Page puede vivir mucho tiempo. Un <code>DbContext</code> no debería vivir lo mismo: usa el factory y crea un contexto corto por operación.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>public sealed class SubjectService(
+    IDbContextFactory&lt;ApplicationDbContext&gt; dbFactory)
+{
+    public async Task&lt;IReadOnlyList&lt;SubjectListItem&gt;&gt; GetAllAsync(
+        CancellationToken cancellationToken)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        return await db.Subjects
+            .AsNoTracking()
+            .OrderBy(subject =&gt; subject.Name)
+            .Select(subject =&gt; new SubjectListItem(
+                subject.Id,
+                subject.Name,
+                subject.Description,
+                subject.IsFavorite,
+                subject.Resources.Count))
+            .ToListAsync(cancellationToken);
+    }
+}</code></pre></div>
+        <ul class="inline-list">
+          <li><code>AsNoTracking</code> para lecturas que no editarás.</li>
+          <li>Proyecta DTOs/list items; no enlaces entidades EF vivas directamente a toda la UI.</li>
+          <li>Una operación de escritura abre contexto, carga/valida, modifica, guarda y lo cierra.</li>
+          <li>Usa migraciones para producción. No combines <code>EnsureCreated</code> con <code>Migrate</code>.</li>
+          <li>Las reglas esenciales deben existir también como constraints/índices de base de datos.</li>
+        </ul>
+
+        <h3>Inicialización recomendada</h3>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>Directory.CreateDirectory(ApplicationDbContext.DatabaseDirectory);
+
+await using var scope = host.Services.CreateAsyncScope();
+var factory = scope.ServiceProvider
+    .GetRequiredService&lt;IDbContextFactory&lt;ApplicationDbContext&gt;&gt;();
+await using var db = await factory.CreateDbContextAsync();
+await db.Database.MigrateAsync();</code></pre></div>
+      </section>
+
+      <section id="async">
+        <h2>Asincronía que no congela la UI</h2>
+        <p class="lead">Toda interacción WPF empieza en el thread UI. I/O de red, disco o base de datos debe ser async de extremo a extremo. Usa <code>Task.Run</code> sólo para trabajo realmente CPU-bound sin API asíncrona.</p>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code>public interface IAiClient
+{
+    Task&lt;Exam&gt; GenerateExamAsync(
+        ExamGenerationRequest request,
+        CancellationToken cancellationToken);
+}
+
+public async Task GenerateExamAsync(CancellationToken cancellationToken)
+{
+    if (IsLoading) return;
+
+    try
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        ParsedExam = await aiClient.GenerateExamAsync(
+            BuildRequest(), cancellationToken);
+    }
+    catch (OperationCanceledException)
+    {
+        StatusMessage = "Operación cancelada";
+    }
+    catch (AiClientException exception)
+    {
+        logger.LogWarning(exception, "Exam generation failed");
+        ErrorMessage = "No se pudo generar el examen.";
+    }
+    finally
+    {
+        IsLoading = false;
+    }
+}</code></pre></div>
+        <ul class="inline-list">
+          <li>Deshabilita el comando mientras <code>IsLoading</code>.</li>
+          <li>Expón cancelación para operaciones largas.</li>
+          <li>Configura timeout del cliente HTTP y límites de tamaño de archivo.</li>
+          <li>No muestres mensajes internos de excepción al usuario; regístralos con <code>ILogger</code>.</li>
+          <li>El retorno de la API debe ser tipado; evita transportar JSON crudo por toda la UI.</li>
+        </ul>
+      </section>
+
+      <section id="feature">
+        <h2>Añadir una funcionalidad de principio a fin</h2>
+        <p class="lead">Ejemplo: añadir “Notas” a un recurso siguiendo una vertical slice mantenible.</p>
+        <div class="steps">
+          <div class="step"><h3>Modela el caso de uso</h3><p>Define <code>Note</code> con invariantes (ResourceId válido, texto requerido, fecha UTC). No empieces por el botón.</p></div>
+          <div class="step"><h3>Actualiza persistencia</h3><p>Añade <code>DbSet&lt;Note&gt;</code>, configuración Fluent API, índice y migración. Prueba con SQLite real en un directorio temporal.</p></div>
+          <div class="step"><h3>Crea un servicio de aplicación</h3><p><code>INoteService.GetForResourceAsync</code>, <code>CreateAsync</code> y <code>DeleteAsync</code>. Usa <code>IDbContextFactory</code>.</p></div>
+          <div class="step"><h3>Crea el ViewModel</h3><p>Estado observable, validación, <code>LoadCommand</code>, <code>SaveCommand</code>, <code>DeleteCommand</code> y estados de carga/error.</p></div>
+          <div class="step"><h3>Diseña la vista XAML</h3><p>Bindings y DataTemplates; sin acceso directo a EF. Añade labels, orden de tabulación y <code>AutomationProperties.Name</code>.</p></div>
+          <div class="step"><h3>Registra en DI y navegación</h3><p>Registra servicio, ViewModel y Page. Navega con ResourceId, no pasando una entidad EF trackeada.</p></div>
+          <div class="step"><h3>Cubre riesgos con tests</h3><p>Validación del dominio, servicio con SQLite, comandos del ViewModel y un smoke test de resolución DI.</p></div>
+        </div>
+
+        <h3>Estructura objetivo pragmática</h3>
+        <div class="code-wrap"><pre><code>attainment/
+├── App.xaml(.cs)                 # Composition root
+├── Features/
+│   ├── Subjects/
+│   │   ├── SubjectsPage.xaml(.cs)
+│   │   ├── SubjectsPageViewModel.cs
+│   │   ├── SubjectService.cs
+│   │   └── SubjectListItem.cs
+│   ├── Resources/
+│   ├── Products/
+│   ├── Exams/
+│   └── Settings/
+├── Domain/                       # Entidades e invariantes
+├── Infrastructure/
+│   ├── Persistence/
+│   ├── Ai/
+│   └── Pdf/
+├── Navigation/
+└── Shared/                       # Commands, converters, styles</code></pre></div>
+      </section>
+
+      <section id="debug">
+        <h2>Depuración y pruebas</h2>
+        <h3>Cuando un binding no funciona</h3>
+        <ol class="inline-list">
+          <li>Verifica el <code>DataContext</code> real de ese elemento.</li>
+          <li>Mira la ventana Output de Visual Studio/Rider: WPF escribe errores de binding.</li>
+          <li>Comprueba nombre y visibilidad pública de la propiedad.</li>
+          <li>Para cambios posteriores, implementa <code>INotifyPropertyChanged</code>.</li>
+          <li>Para listas mutables, usa <code>ObservableCollection&lt;T&gt;</code>.</li>
+          <li>Revisa que el converter esté registrado y que no lance excepciones.</li>
+        </ol>
+
+        <h3>Pirámide de pruebas recomendada</h3>
+        <div class="grid">
+          <div class="card"><span class="pill ok">Muchas</span><h3>Dominio</h3><p class="muted">Validación de examen, nombres, opciones, respuesta correcta y rutas.</p></div>
+          <div class="card"><span class="pill p2">Varias</span><h3>Servicios</h3><p class="muted">SQLite temporal, migraciones, CRUD, restricciones y cliente IA falso.</p></div>
+          <div class="card"><span class="pill p1">Pocas</span><h3>UI</h3><p class="muted">Resolución DI, navegación y escenarios críticos, evitando tests frágiles de pixels.</p></div>
+        </div>
+
+        <h3>Tests mínimos para Attainment</h3>
+        <ul class="checklist">
+          <li>Arranque del host y resolución de todas las Pages/ViewModels.</li>
+          <li>Migración sobre SQLite vacío y actualización desde esquema anterior.</li>
+          <li>Parse de examen válido, JSON roto, array vacío y cada invariante inválida.</li>
+          <li>Request IA con y sin archivo, autorización, timeout, 4xx, 5xx y cancelación.</li>
+          <li>Persistencia de favorito y conteo de recursos.</li>
+          <li>Reload y guardado de Settings, incluida rotación de clave.</li>
+          <li>Generación PDF con textos largos, unicode y examen inválido.</li>
+        </ul>
+      </section>
+
+      <section id="comandos">
+        <h2>Comandos de trabajo</h2>
+        <div class="callout warning"><strong>Primero corrige o instala el SDK</strong><p>El repositorio actual no compila con <code>global.json: 10.0.0</code>. Usa una banda real compatible con el proyecto, como <code>10.0.100</code>, y asegúrate de tener el workload/runtime Windows Desktop correspondiente.</p></div>
+        <div class="code-wrap"><button class="copy">Copiar</button><pre><code># Ver SDK efectivo y diagnóstico
+dotnet --info
+
+# Restaurar, compilar y probar
+dotnet restore attainment.sln
+dotnet build attainment.sln --configuration Debug
+dotnet test attainment.sln --configuration Debug --no-build
+
+# Ejecutar la app
+dotnet run --project attainment/attainment.csproj
+
+# Crear y aplicar migración
+dotnet ef migrations add NombreMigracion --project attainment
+dotnet ef database update --project attainment
+
+# Publicar Windows x64 autocontenido
+dotnet publish attainment/attainment.csproj \
+  --configuration Release \
+  --runtime win-x64 \
+  --self-contained true</code></pre></div>
+        <p class="muted">En PowerShell, usa el acento grave (<code>`</code>) en lugar de <code>\</code> para continuar una orden en varias líneas, o ejecuta la orden en una sola línea.</p>
+      </section>
+
+      <section id="checklist">
+        <h2>Checklist antes de integrar cambios</h2>
+        <div class="grid">
+          <div class="card wide"><h3>Arquitectura</h3><ul class="checklist"><li>La View no accede a EF ni HTTP.</li><li>Las dependencias llegan por constructor.</li><li>El contexto vive una operación.</li><li>La navegación usa IDs/DTOs, no entidades trackeadas.</li><li>Las invariantes viven fuera de XAML.</li></ul></div>
+          <div class="card wide"><h3>UX y robustez</h3><ul class="checklist"><li>Hay loading, error, vacío y éxito.</li><li>Se puede cancelar lo largo.</li><li>Teclado y lector de pantalla tienen soporte.</li><li>Los errores técnicos se registran, no se exponen.</li><li>Los borrados destructivos se confirman.</li></ul></div>
+          <div class="card wide"><h3>Datos y seguridad</h3><ul class="checklist"><li>Migración creada y probada.</li><li>Constraints respaldan reglas críticas.</li><li>Secretos no están en texto plano.</li><li>No se registran claves ni contenido sensible.</li><li>Rutas y tamaños de archivo se validan.</li></ul></div>
+          <div class="card wide"><h3>Entrega</h3><ul class="checklist"><li>Build limpio en Debug y Release.</li><li>Tests específicos y suite completa pasan.</li><li>La app arranca con base vacía.</li><li>La documentación refleja cambios.</li><li>Dependencias y licencias están revisadas.</li></ul></div>
+        </div>
+      </section>
+    </div>
+
+    <footer>Attainment · Revisión basada en la rama <code>main</code> y commit <code>9f8e4ea</code>.</footer>
+  </main>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const storedTheme = localStorage.getItem('attainment-guide-theme');
+  if (storedTheme) root.dataset.theme = storedTheme;
+
+  document.getElementById('themeButton').addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    localStorage.setItem('attainment-guide-theme', next);
+  });
+
+  document.querySelectorAll('.copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const text = button.nextElementSibling.innerText;
+      await navigator.clipboard.writeText(text);
+      const previous = button.textContent;
+      button.textContent = 'Copiado';
+      setTimeout(() => button.textContent = previous, 1200);
+    });
+  });
+
+  const links = [...document.querySelectorAll('#nav a')];
+  const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(section => observer.observe(section));
+</script>
+</body>
+</html>
