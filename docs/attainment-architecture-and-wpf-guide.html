@@ -202,8 +202,8 @@
     <nav id="nav">
       <div class="nav-label">Revisión</div>
       <a href="#resumen">Resumen ejecutivo</a>
-      <a href="#arquitectura">Arquitectura actual</a>
-      <a href="#hallazgos">Hallazgos priorizados</a>
+      <a href="#arquitectura">Arquitectura original</a>
+      <a href="#hallazgos">Hallazgos originales y estado</a>
       <a href="#roadmap">Roadmap recomendado</a>
       <div class="nav-label">Guía WPF</div>
       <a href="#wpf">Qué librería usa</a>
@@ -233,7 +233,12 @@
     <div class="content">
       <section id="resumen">
         <h2>Resumen ejecutivo</h2>
-        <p class="lead">Attainment es un prototipo funcional y pequeño, con una intención arquitectónica correcta —WPF, DI, EF Core y servicios aislados— pero la implementación mezcla MVVM y code-behind, elude el contenedor en varias vistas y contiene defectos que bloquean o rompen flujos importantes.</p>
+        <div class="callout success" style="margin-bottom:18px">
+          <strong>Estado tras la remediación</strong>
+          <p>La auditoría se conserva como línea base histórica. Las correcciones se dividieron en pull requests apiladas: toolchain y documentación, persistencia y settings, flujo OpenAI/exámenes, y calidad WPF/CI. La solución compila sin warnings y la validación automatizada cubre parser, HTTP, servicios, constraints y migraciones.</p>
+        </div>
+        <p class="lead"><strong>Evaluación original:</strong> Attainment era un prototipo funcional y pequeño, con una intención arquitectónica correcta —WPF, DI, EF Core y servicios aislados— pero la implementación mezclaba MVVM y code-behind, eludía el contenedor en varias vistas y contenía defectos que bloqueaban o rompían flujos importantes.</p>
+        <p class="muted"><strong>Línea base original:</strong> las métricas y hallazgos siguientes describen el repositorio antes de aplicar la remediación.</p>
 
         <div class="grid">
           <div class="card"><div class="metric">3</div><strong>problemas críticos/altos inmediatos</strong><p class="muted">SDK inválido, petición de archivo a IA incompatible y recarga de Settings defectuosa.</p></div>
@@ -242,7 +247,7 @@
         </div>
 
         <div class="callout danger" style="margin-top:18px">
-          <strong>Estado de compilación verificado</strong>
+          <strong>Estado original de compilación verificado</strong>
           <p><code>dotnet build attainment.sln</code> no llega a ejecutarse: <code>global.json</code> solicita <code>10.0.0</code>, que no es una versión válida de SDK. Los SDK usan bandas como <code>10.0.100</code>. La máquina sólo expone el SDK <code>8.0.416</code>.</p>
         </div>
 
@@ -257,7 +262,7 @@
       </section>
 
       <section id="arquitectura">
-        <h2>Arquitectura actual</h2>
+        <h2>Arquitectura original</h2>
         <p class="lead">El proyecto usa WPF nativo. No hay una librería de UI externa: XAML es el lenguaje declarativo de WPF, no un framework adicional.</p>
         <div class="card full diagram">
           <div class="flow">
@@ -282,8 +287,8 @@
       </section>
 
       <section id="hallazgos">
-        <h2>Hallazgos priorizados</h2>
-        <p class="lead">La prioridad combina impacto funcional, riesgo de datos, seguridad, mantenibilidad y coste de corrección.</p>
+        <h2>Hallazgos originales y estado</h2>
+        <p class="lead">La prioridad combina impacto funcional, riesgo de datos, seguridad, mantenibilidad y coste de corrección. Los elementos se mantienen como registro de decisiones; las pull requests de remediación implementan los cambios indicados.</p>
 
         <div class="finding">
           <div><span class="pill p0">P0</span></div>

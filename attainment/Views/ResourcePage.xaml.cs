@@ -8,7 +8,6 @@ using System.IO;
 using System.Diagnostics;
 using attainment.Models;
 using Microsoft.Win32;
-using Microsoft.Extensions.DependencyInjection;
 using attainment.Application;
 
 namespace attainment.Views
@@ -25,16 +24,23 @@ namespace attainment.Views
         }
 
         private readonly IResourceService _resourceService;
+        private readonly IAppNavigationService _navigationService;
+        private readonly IUserNotificationService _notifications;
         private int? _initialSubjectId;
         private List<Subject> _allSubjects = [];
         private List<Resource> _allResources = [];
         private bool _subjectsLoaded = false;
         private ViewMode _currentMode = ViewMode.List;
 
-        public ResourcePage(IResourceService resourceService)
+        public ResourcePage(
+            IResourceService resourceService,
+            IAppNavigationService navigationService,
+            IUserNotificationService notifications)
         {
             InitializeComponent();
             _resourceService = resourceService;
+            _navigationService = navigationService;
+            _notifications = notifications;
             Loaded += ResourcePage_Loaded;
         }
 
@@ -80,25 +86,12 @@ namespace attainment.Views
                         return;
                     }
 
-                    var page = App.Services.GetRequiredService<ExamCreationPage>();
-                    page.ViewModel.Resource = resource;
-                    
-                    // Navigate
-                    if (NavigationService != null)
-                    {
-                        NavigationService.Navigate(page);
-                    }
-                    else
-                    {
-                        // Fallback: try to find parent frame
-                        var window = System.Windows.Application.Current.MainWindow as MainWindow;
-                        window?.ResourcesFrame?.Navigate(page);
-                    }
+                    _navigationService.OpenExam(resource);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Navigation Error", "The exam screen could not be opened. Try again.", ex);
             }
         }
 
@@ -118,8 +111,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading subjects: {ex.Message}", "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "Subjects could not be loaded. Try again.", ex);
             }
         }
 
@@ -131,8 +123,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading resources: {ex.Message}", "Database Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "Resources could not be loaded. Try again.", ex);
             }
         }
 
@@ -148,7 +139,7 @@ namespace attainment.Views
 
         private void ApplyFilter()
         {
-            string searchTerm = (ResourceSearchBar?.Text ?? string.Empty).Trim().ToLower();
+            string searchTerm = (ResourceSearchBar?.Text ?? string.Empty).Trim();
             int selectedSubjectId = 0;
             if (SubjectsComboBox?.SelectedValue is int id)
             {
@@ -167,10 +158,10 @@ namespace attainment.Views
             if (!string.IsNullOrEmpty(searchTerm))
             {
                 query = query.Where(r =>
-                    (r.Title?.ToLower().Contains(searchTerm) ?? false) ||
-                    (r.Description?.ToLower().Contains(searchTerm) ?? false) ||
-                    (r.Url?.ToLower().Contains(searchTerm) ?? false) ||
-                    (r.FilePath?.ToLower().Contains(searchTerm) ?? false)
+                    (r.Title?.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                    (r.Description?.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                    (r.Url?.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                    (r.FilePath?.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ?? false)
                 );
             }
 
@@ -275,7 +266,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving resource: {ex.Message}", "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("Data Error", "The resource could not be saved. Try again.", ex);
             }
         }
 
@@ -329,7 +320,7 @@ namespace attainment.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to open in Explorer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _notifications.ShowError("File Error", "The location could not be opened in File Explorer.", ex);
             }
         }
     }
