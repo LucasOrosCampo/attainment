@@ -12,13 +12,26 @@ namespace attainment.Infrastructure;
 
 public interface IPdf
 {
-    public string Convert(FileInfo file);
-    public string ExportExam(Exam exam, string? targetPath = null);
+    Task<string> ConvertAsync(FileInfo file, CancellationToken cancellationToken = default);
+    Task<string> ExportExamAsync(Exam exam, string? targetPath = null, CancellationToken cancellationToken = default);
 }
 
 public class Pdf: IPdf
 {
-    public string Convert(FileInfo file)
+    public Task<string> ConvertAsync(FileInfo file, CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() => Convert(file), cancellationToken);
+    }
+
+    public Task<string> ExportExamAsync(
+        Exam exam,
+        string? targetPath = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() => ExportExam(exam, targetPath), cancellationToken);
+    }
+
+    private static string Convert(FileInfo file)
     {
         if (!file.Exists)
             throw new FileNotFoundException($"PDF file not found: {file.FullName}");
@@ -36,7 +49,7 @@ public class Pdf: IPdf
         return text.ToString();
     }
 
-    public string ExportExam(Exam exam, string? targetPath = null)
+    private static string ExportExam(Exam exam, string? targetPath = null)
     {
         if (exam == null || exam.Questions == null || exam.Questions.Length == 0)
             throw new ArgumentException("Exam must contain at least one question.", nameof(exam));
@@ -89,7 +102,7 @@ public class Pdf: IPdf
                                 inner.Item().Text(txt =>
                                 {
                                     txt.Span($"{idx}. ").SemiBold();
-                                    txt.Span(Safe(q.Content)).WrapAnywhere();
+                                    txt.Span(Safe(q.Content));
                                 });
 
                                 inner.Item().Column(optionsCol =>
@@ -99,7 +112,7 @@ public class Pdf: IPdf
                                         optionsCol.Item().Text(t =>
                                         {
                                             t.Span($"   [{opt.Number}] ").SemiBold();
-                                            t.Span(Safe(opt.Content)).WrapAnywhere();
+                                            t.Span(Safe(opt.Content));
                                         });
                                     }
                                 });
@@ -143,17 +156,17 @@ public class Pdf: IPdf
                                 inner.Item().Text(t =>
                                 {
                                     t.Span($"Q{i + 1}: ").SemiBold();
-                                    t.Span(Safe(q.Content)).WrapAnywhere();
+                                    t.Span(Safe(q.Content));
                                 });
                                 inner.Item().Text(t =>
                                 {
                                     t.Span("Correct Answer: ").SemiBold();
-                                    t.Span($"[{q.CorrectOption}] {Safe(correctText)}").FontColor(Colors.Blue.Darken2).WrapAnywhere();
+                                    t.Span($"[{q.CorrectOption}] {Safe(correctText)}").FontColor(Colors.Blue.Darken2);
                                 });
                                 inner.Item().Text(t =>
                                 {
                                     t.Span("Explanation: ").SemiBold();
-                                    t.Span(Safe(q.Explanation)).FontColor(Colors.Grey.Darken2).WrapAnywhere();
+                                    t.Span(Safe(q.Explanation)).FontColor(Colors.Grey.Darken2);
                                 });
                             })
                         );

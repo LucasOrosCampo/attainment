@@ -52,16 +52,47 @@ public sealed class PersistenceTests : IDisposable
     [Fact]
     public async Task SettingsService_SavesAndReloadsDeclaredValue()
     {
-        var settingsService = new SettingsService(_factory);
+        var protector = new TestSecretProtector();
+        var settingsService = new SettingsService(_factory, protector);
         await settingsService.SaveAsync(
         [
             new Setting { Key = SettingKeys.OpenAIKey, Value = "test-key" }
         ]);
 
         var settings = await settingsService.GetAllAsync();
-        var setting = Assert.Single(settings);
+        var setting = Assert.Single(settings, setting => setting.Key == SettingKeys.OpenAIKey);
         Assert.Equal(SettingKeys.OpenAIKey, setting.Key);
         Assert.Equal("test-key", setting.Value);
+
+        await using var dbContext = _factory.CreateDbContext();
+        var storedValue = await dbContext.Settings
+            .Where(stored => stored.Key == SettingKeys.OpenAIKey)
+            .Select(stored => stored.Value)
+            .SingleAsync();
+        Assert.Equal("protected:test-key", storedValue);
+        Assert.Contains(settings, saved =>
+            saved.Key == SettingKeys.OpenAIModel && saved.Value == SettingKeys.DefaultValue(SettingKeys.OpenAIModel));
+    }
+
+    [Fact]
+    public async Task SettingsService_ProtectsExistingPlaintextSecret()
+    {
+        await using (var dbContext = _factory.CreateDbContext())
+        {
+            dbContext.Settings.Add(new Setting { Key = SettingKeys.OpenAIKey, Value = "legacy-key" });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var settingsService = new SettingsService(_factory, new TestSecretProtector());
+        await settingsService.ProtectSecretsAsync();
+
+        await using var verificationContext = _factory.CreateDbContext();
+        var storedValue = await verificationContext.Settings
+            .Where(setting => setting.Key == SettingKeys.OpenAIKey)
+            .Select(setting => setting.Value)
+            .SingleAsync();
+        Assert.Equal("protected:legacy-key", storedValue);
+        Assert.Equal("legacy-key", await settingsService.GetValueAsync(SettingKeys.OpenAIKey));
     }
 
     [Fact]
@@ -119,5 +150,17 @@ public sealed class PersistenceTests : IDisposable
         : IDbContextFactory<ApplicationDbContext>
     {
         public ApplicationDbContext CreateDbContext() => new(options);
+    }
+
+    private sealed class TestSecretProtector : ISecretProtector
+    {
+        private const string Prefix = "protected:";
+
+        public string Protect(string plaintext) => IsProtected(plaintext) ? plaintext : Prefix + plaintext;
+
+        public string Unprotect(string protectedValue) =>
+            IsProtected(protectedValue) ? protectedValue[Prefix.Length..] : protectedValue;
+
+        public bool IsProtected(string value) => value.StartsWith(Prefix, StringComparison.Ordinal);
     }
 }

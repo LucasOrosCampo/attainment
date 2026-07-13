@@ -35,9 +35,14 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IResourceService, ResourceService>();
                 services.AddSingleton<IProductService, ProductService>();
                 services.AddSingleton<ISettingsService, SettingsService>();
+                services.AddSingleton<ISecretProtector, DpapiSecretProtector>();
 
-                services.AddTransient<Infrastructure.ExamRepository>();
-                services.AddSingleton<Infrastructure.IAi, Infrastructure.OpenAi>();
+                services.AddSingleton<Infrastructure.ExamRepository>();
+                services.AddHttpClient<Infrastructure.IAi, Infrastructure.OpenAi>(client =>
+                {
+                    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+                    client.Timeout = TimeSpan.FromMinutes(3);
+                });
                 services.AddSingleton<Infrastructure.IPdf, Infrastructure.Pdf>();
 
                 // ViewModels
@@ -71,6 +76,10 @@ public partial class App : System.Windows.Application
 #endif
 
             dbContext.SaveChanges();
+            scope.ServiceProvider.GetRequiredService<ISettingsService>()
+                .ProtectSecretsAsync()
+                .GetAwaiter()
+                .GetResult();
         }
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
@@ -96,7 +105,7 @@ public partial class App : System.Windows.Application
                 dbContext.Settings.Add(new Models.Setting
                 {
                     Key = key,
-                    Value = null
+                    Value = Models.SettingKeys.DefaultValue(key)
                 });
             }
         }
